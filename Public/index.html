@@ -7,31 +7,22 @@
     <title>Music Recognition Website</title>
 </head>
 <body>
-    <div class="sidebar">
-        <h2>Library</h2>
-        <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#">Search</a></li>
-            <li><a href="#">Liked Songs</a></li>
-            <li><a href="#">Local Files</a></li>
-        </ul>
+    <div class="top-bar">
+        <h1>Music Recognition App</h1>
     </div>
     <div class="container">
-        <div class="top-bar">
-            <h1>Identify Your Music</h1>
-        </div>
         <div class="upload-section">
+            <h2>Identify Your Music</h2>
             <input type="file" id="musicInput" accept="audio/*">
             <button id="identifyButton">Identify Song</button>
+            <div id="result" class="result-box"></div>
         </div>
-        <div id="result" class="result-box"></div>
-        
-        <h2>Live Listening</h2>
         <div class="live-section">
+            <h2>Live Listening</h2>
             <button id="startListening">Start Listening</button>
             <button id="stopListening" disabled>Stop Listening</button>
+            <div id="liveResult" class="result-box"></div>
         </div>
-        <div id="liveResult" class="result-box"></div>
     </div>
     <script src="script.js"></script>
 </body>

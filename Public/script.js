@@ -15,7 +15,6 @@ document.getElementById('identifyButton').addEventListener('click', () => {
         })
         .catch(error => {
             console.error('Error:', error);
-            document.getElementById('result').innerText = 'Error recognizing the song. Please try again.';
         });
     } else {
         alert('Please select a music file first.');
@@ -56,7 +55,6 @@ startListeningButton.addEventListener('click', () => {
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    document.getElementById('liveResult').innerText = 'Error recognizing the song. Please try again.';
                 });
             });
 
