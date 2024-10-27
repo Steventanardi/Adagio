@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-    <title>Music Recognition Website</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <title>Music Recognition App</title>
 </head>
 <body>
     <div class="top-bar">
@@ -17,13 +18,43 @@
             <button id="identifyButton">Identify Song</button>
             <div id="result" class="result-box"></div>
         </div>
+
         <div class="live-section">
-            <h2>Live Listening</h2>
-            <button id="startListening">Start Listening</button>
-            <button id="stopListening" disabled>Stop Listening</button>
-            <div id="liveResult" class="result-box"></div>
+            <h2>Live Listening in Device</h2>
+            <button id="startListeningDevice">Start Listening in Device</button>
+            <button id="stopListeningDevice" disabled>Stop Listening in Device</button>
+            <div id="liveResultDevice" class="result-box"></div>
+        </div>
+
+        <div class="live-section">
+            <h2>Live Listening through Microphone</h2>
+            <button id="startListeningMic">Start Listening through Microphone</button>
+            <button id="stopListeningMic" disabled>Stop Listening through Microphone</button>
+            <div id="liveResultMic" class="result-box"></div>
         </div>
     </div>
+
+    <div id="musicPlayer" class="music-player">
+        <img id="albumArt" src="default_album_art.jpg" alt="Album Art" class="album-art">
+        <div class="player-info">
+            <h3 id="songTitle">As You Fade Away</h3>
+            <p id="songArtist">Vetrivel Ravi (Hipop)</p>
+        </div>
+        <input type="range" id="seek-bar" value="0" max="100" class="seek-bar">
+        <div class="timestamp">
+            <span id="currentTime">0:09</span> / <span id="duration">4:16</span>
+        </div>
+        <div class="player-controls">
+            <button id="prevButton" class="control-button">⏮️</button>
+            <button id="playPauseButton" class="control-button">⏯️</button>
+            <button id="nextButton" class="control-button">⏭️</button>
+        </div>
+        <div class="volume-control">
+            <button id="muteButton" class="control-button">🔇</button>
+            <input type="range" id="volume-bar" min="0" max="1" step="0.01" value="1">
+        </div>
+    </div>
+    
     <script src="script.js"></script>
 </body>
 </html>

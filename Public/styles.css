@@ -1,61 +1,59 @@
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f8f9fa;
-    color: #212529;
+    font-family: 'Roboto', sans-serif;
+    background-color: #f9f9f9;
+    color: #333;
     margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    min-height: 100vh;
+    box-sizing: border-box;
 }
 
 .top-bar {
     width: 100%;
-    background-color: #343a40;
-    color: #ffffff;
-    padding: 15px;
+    background-color: #ffffff;
+    color: #333;
+    padding: 20px;
     text-align: center;
-    box-shadow: 0px 4px 2px -2px gray;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .container {
     background-color: #ffffff;
-    padding: 40px;
-    border-radius: 10px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-    max-width: 600px;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
     width: 100%;
     text-align: center;
-    margin-top: 20px;
+    margin: 40px auto 100px auto; /* Adding margin to give space above audio player */
 }
 
 h1, h2 {
     margin-bottom: 20px;
-}
-
-.upload-section, .live-section {
-    margin-bottom: 30px;
+    font-weight: 500;
 }
 
 input[type="file"] {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     padding: 10px;
 }
 
 button {
-    padding: 10px 20px;
+    padding: 12px 20px;
     background-color: #007bff;
     color: #ffffff;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     cursor: pointer;
     margin: 10px;
+    transition: background-color 0.3s, box-shadow 0.3s;
 }
 
 button:hover {
     background-color: #0056b3;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 button:disabled {
@@ -64,9 +62,123 @@ button:disabled {
 }
 
 .result-box {
-    margin-top: 20px;
+    margin-top: 15px;
     padding: 15px;
-    background-color: #e9ecef;
+    background-color: #fafafa;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.music-player {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #ffffff;
+    color: #333;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    justify-content: space-between;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 15px;
+}
+
+.album-art {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+}
+
+.player-info {
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+}
+
+.player-info h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-info p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #777;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.seek-bar {
+    width: 30%;
+    appearance: none;
+    background: #ddd;
+    height: 5px;
     border-radius: 5px;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    outline: none;
+}
+
+.seek-bar::-webkit-slider-thumb {
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    background: #ff4500; /* Bright orange-red color for the thumb */
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.timestamp {
+    font-size: 0.875rem;
+    color: #777;
+    white-space: nowrap;
+}
+
+.player-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.control-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.control-button:hover {
+    color: #ff4500; /* Bright orange-red color for the hover effect */
+}
+
+.volume-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#volume-bar {
+    width: 100px;
+    appearance: none;
+    height: 5px;
+    background: #ddd;
+    border-radius: 5px;
+    outline: none;
+}
+
+#volume-bar::-webkit-slider-thumb {
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    background: #ff4500; /* Bright orange-red color for the volume thumb */
+    border-radius: 50%;
+    cursor: pointer;
 }
