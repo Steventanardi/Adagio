@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const startListeningMicButton = document.getElementById('startListeningMic');
     const stopListeningMicButton = document.getElementById('stopListeningMic');
     const identifyButton = document.getElementById('identifyButton');
+    const floatingSpheres = document.querySelectorAll('.floating-sphere');
+    const soundWave = document.querySelector('.sound-wave');
 
     let mediaRecorder;
     let mediaRecorderMic;
@@ -50,11 +52,24 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
 
-    // Handle file upload recognition
+    /// Function to show the sound wave animation and hide floating spheres
+    function activateSoundWave() {
+        // Show the sound wave
+        soundWave.style.display = 'flex';
+
+        // Hide all floating spheres
+        floatingSpheres.forEach(sphere => {
+            sphere.style.display = 'none';
+        });
+    }
+
+    // Event Listener for Identify Button
     identifyButton.addEventListener('click', function () {
+        activateSoundWave();
+
         const fileInput = document.getElementById('musicInput');
         const file = fileInput.files[0];
-
+        
         if (file) {
             const formData = new FormData();
             formData.append('musicFile', file);
@@ -65,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .then(response => response.json())
             .then(result => {
-                handleSongRecognition(result);
+                handleSongRecognition(result); // Process song recognition
             })
             .catch(error => {
                 console.error('Upload error:', error);
@@ -75,23 +90,24 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Live Listening through Microphone
+    // Event Listener for Start Listening through Microphone Button
     startListeningMicButton.addEventListener('click', async function () {
+        activateSoundWave();
+
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
             if (stream) {
-                mediaRecorderMic = new MediaRecorder(stream);
+                const mediaRecorder = new MediaRecorder(stream);
                 let audioChunks = [];
 
-                mediaRecorderMic.ondataavailable = (event) => {
+                mediaRecorder.ondataavailable = (event) => {
                     if (event.data.size > 0) {
                         audioChunks.push(event.data);
                     }
                 };
 
-                mediaRecorderMic.onstop = async () => {
-                    clearTimeout(micTimeout);
+                mediaRecorder.onstop = async () => {
                     const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
                     const formData = new FormData();
                     formData.append('musicFile', audioBlob, 'micAudio.wav');
@@ -102,28 +118,28 @@ document.addEventListener('DOMContentLoaded', function () {
                     })
                     .then(response => response.json())
                     .then(result => {
-                        handleSongRecognition(result);
+                        handleSongRecognition(result); // Process song recognition
                     })
                     .catch(error => {
                         console.error('Microphone upload error:', error);
                     });
                 };
 
-                mediaRecorderMic.start();
-                micTimeout = setTimeout(() => {
-                    if (mediaRecorderMic.state === "recording") {
-                        mediaRecorderMic.stop();
+                mediaRecorder.start();
+                setTimeout(() => {
+                    if (mediaRecorder.state === "recording") {
+                        mediaRecorder.stop();
                     }
                 }, 20000);
 
                 startListeningMicButton.disabled = true;
-                stopListeningMicButton.disabled = false;
             }
         } catch (err) {
             console.error('Error capturing microphone audio:', err);
             alert('Unable to capture microphone audio. Make sure to allow permissions.');
         }
     });
+
 
     stopListeningMicButton.addEventListener('click', () => {
         if (mediaRecorderMic && mediaRecorderMic.state === "recording") {
