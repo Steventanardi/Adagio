@@ -209,3 +209,37 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+document.addEventListener('DOMContentLoaded', function () {
+    const sphereButton = document.querySelector('.sphere-button');
+    const soundWave = document.querySelector('.sound-wave');
+
+    // Keep existing functionality of the sphere button here
+    sphereButton.addEventListener('click', function () {
+        // Execute original functionality (add your logic here)
+
+        // Toggle visibility of the sound-wave animation
+        if (soundWave.style.display === 'none' || !soundWave.style.display) {
+            soundWave.style.display = 'flex'; // Show the sound wave
+        } else {
+            soundWave.style.display = 'none'; // Hide the sound wave
+        }
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const sphereButton = document.querySelector('.sphere-button');
+    const floatingSphere = document.querySelector('.floating-sphere');
+    const overlayText = document.querySelector('.overlay');
+    const soundWave = document.querySelector('.sound-wave');
+
+    // Add event listener to the sphere button
+    sphereButton.addEventListener('click', function () {
+        // Hide the sphere and overlay text
+        floatingSphere.style.display = 'none';
+        overlayText.style.display = 'none';
+
+        // Show the sound wave animation
+        soundWave.style.display = 'flex';
+    });
+});
+

@@ -9,14 +9,14 @@
 </head>
 <body>
     <div class="auth-container">
-        <div class="auth-left">
+        <div class="centered-container">
             <header>
                 <div class="logo" onclick="redirectToHome()">ADAGIO<sup>&trade;</sup></div>
             </header>
             
-            <div class="auth-content">
-                <h2>Login to Your Account</h2>
-                <p>Login using social networks</p>
+            <div class="rounded-container">
+                <h2 class="centered-text">Login to Your Account</h2>
+                <p class="centered-text">Login using social networks</p>
                 
                 <!-- Social Media Buttons -->
                 <div class="social-login">
@@ -25,29 +25,41 @@
                     <button class="social-btn linkedin-btn">in</button>
                 </div>
                 
-                <p>OR</p>
+                <p class="centered-text">OR</p>
 
                 <form>
                     <input type="email" placeholder="Email" required class="input-field">
                     <input type="password" placeholder="Password" required class="input-field">
-                    <button type="submit" class="submit-btn">Sign In</button>
+                    <!-- Modified Sign-In and Sign-Up Buttons in signin.html -->
+                    <div class="button-container">
+                        <button type="submit" class="submit">Sign In</button>
+                        <button type="button" class="upsign" onclick="redirectToSignup()">Sign Up</button>
+                    </div>
+
                 </form>
             </div>
         </div>
 
+        <!-- Sign-Up Invitation Commented Out -->
+        <!-- 
         <div class="auth-right">
             <div class="signup-invitation">
                 <h2>New Here?</h2>
                 <p>Sign up and discover a great amount of new opportunities!</p>
-                <a href="signup.html" class="signup-btn">Sign Up</a>
+                <a href="signup.html" class="signup">Sign Up</a>
             </div>
         </div>
+        -->
     </div>
 
     <script>
         function redirectToHome() {
             window.location.href = 'index.html';
         }
+
+        function redirectToSignup() {
+        window.location.href = 'signup.html';
+        }   
     </script>
 </body>
 </html>

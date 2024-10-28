@@ -1,13 +1,9 @@
 body {
+    background-color: #212121 !important; /* Ensure it overrides other styles */
     font-family: 'Roboto', sans-serif;
-    background: linear-gradient(135deg, #5b0060, #1e003c); /* Gradient from purple to dark blue */
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed; /* Keeps the background fixed during scroll */
-    color: #333;
     margin: 0;
     padding: 0;
+    color: #333;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -21,7 +17,7 @@ header {
     justify-content: space-between;
     align-items: center;
     padding: 20px 40px;
-    background-color: #181434;
+    background-color: #171717;
     box-sizing: border-box;
     position: fixed; /* Fixes the header at the top of the screen */
     top: 0; /* Positions the header at the top */
@@ -30,6 +26,21 @@ header {
     height: 80px; /* Adjust the height as needed */
 }
 
+footer {
+    width: 100%; /* Make the footer full width */
+    text-align: center;
+    padding: 20px 0; /* Adjust padding as needed */
+    background-color: #171717;
+    box-sizing: border-box; /* Include padding in width calculation */
+    position: relative; /* Optional: adjust if you want to keep it at the bottom */
+    left: 0; /* Align to the far left */
+    right: 0; /* Align to the far right */
+    bottom: 0; /* Stick to the bottom */
+}
+
+footer p {
+    color: #707070;
+}
 
 .logo {
     font-size: 2rem;
@@ -68,7 +79,7 @@ nav ul li a:hover {
 .dropdown-menu {
     display: none;
     position: absolute;
-    background-color: #1e1e3f;
+    background-color: #0d0d0d;
     top: 100%;
     left: 0;
     min-width: 200px;
@@ -85,7 +96,7 @@ nav ul li a:hover {
 .dropdown-menu {
     display: none;
     position: absolute;
-    background-color: #1e1e3f;
+    background-color: #0d0d0d;
     top: 100%;
     left: 0;
     min-width: 200px;
@@ -125,7 +136,7 @@ nav ul li a:hover {
 
 /* Sign In Button Styling */
 .sign-in-btn {
-    background-color:#50c9ce; /* Light blue background */
+    background-color:#2f2f2f; /* Light blue background */
     color: white;
     padding: 10px 20px;
     border-radius: 5px;
@@ -147,6 +158,25 @@ nav ul li a:hover {
     width: 100%;
     text-align: center;
     margin: 40px auto 100px auto; /* Adding margin to give space above audio player */
+}
+
+/* Centering the Sign-In Container */
+.centered-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+}
+
+/* Rounded Edges for the Sign-In Section */
+.rounded-container {
+    background-color: #ffffff;
+    border-radius: 20px; /* Rounded corners */
+    padding: 50px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    width: 100%;
 }
 
 h1, h2 {
@@ -275,23 +305,6 @@ button:disabled {
     color: #777;
 }
 
-
-footer {
-    width: 100%; /* Make the footer full width */
-    text-align: center;
-    padding: 20px 0; /* Adjust padding as needed */
-    background-color: #141433;
-    box-sizing: border-box; /* Include padding in width calculation */
-    position: relative; /* Optional: adjust if you want to keep it at the bottom */
-    left: 0; /* Align to the far left */
-    right: 0; /* Align to the far right */
-    bottom: 0; /* Stick to the bottom */
-}
-
-footer p {
-    color: #707070;
-}
-
 .hero {
     height: 100vh;
     background-image: url('/path-to-your-background-image.jpg'); /* Use a space-like background */
@@ -311,10 +324,10 @@ footer p {
     transform: translate(-50%, -50%); /* Center the element */
     width: 150px;
     height: 150px;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(80, 201, 206, 0.2);
     border-radius: 50%;
     animation: float 4s ease-in-out infinite; /* Apply the animation */
-    box-shadow: 0px 0px 20px 10px rgba(255, 255, 255, 0.8); /* White glow */
+    box-shadow: 0px 0px 20px 10px rgba(80, 201, 206, 0.8); /* Glow effect with #50c9ce */
     cursor: pointer;
 }
 
@@ -360,6 +373,13 @@ footer p {
     background-color: rgba(80, 201, 206, 0.1); /* Optional hover effect */
 }
 
+.sphere-button i {
+    font-size: 4rem; /* Larger size for the icon */
+    color: #ffffff;  /* White color for the icon */
+    margin-top: 40px; /* Adjust this value to lower the icon */
+}
+
+
 .microphone-wave {
     width: 0;
     height: 0;
@@ -372,6 +392,12 @@ footer p {
     transition: width 0.4s ease, height 0.4s ease;
     animation: pulse 1.2s infinite; /* Add animation for pulsating effect */
     display: none; /* Initially hidden */
+}
+
+.camera-icon {
+    width: 50px; /* Adjust size as needed */
+    height: 50px;
+    object-fit: contain;
 }
 
 @keyframes pulse {
@@ -707,6 +733,7 @@ footer p {
     transition: background-color 0.3s ease;
 }
 
+
 /* Hide the dropdown buttons initially */
 .dropdown-buttons {
     display: none;
@@ -721,6 +748,54 @@ footer p {
     padding: 10px;
     margin-top: 5px; /* Small margin from the main button */
 }
+
+/* Centered Text Alignment */
+.centered-text {
+    text-align: center;
+}
+
+/* Submit Button Styling (Unified with upsign) */
+.submit, .upsign {
+    background-color: #2f2f2f; /* Keep button color consistent */
+    color: white;
+    padding: 15px 20px; /* Consistent padding */
+    border: none;
+    border-radius: 25px; /* Rounded corners */
+    font-size: 18px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+    width: 100%; /* Ensure full width */
+    max-width: 200px; /* Set maximum width */
+    text-align: center;
+    box-sizing: border-box; /* Consistent box-sizing */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: auto; /* Ensure height adjusts with padding */
+}
+
+/* Hover effect for both buttons */
+.submit:hover, .upsign:hover {
+    background-color: #3ba1a7; /* Consistent hover color */
+}
+
+/* Container for the buttons to be side-by-side */
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+/* Container for the buttons to be side-by-side */
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
 
 .sign-in-container:hover .dropdown-buttons {
     display: flex;
@@ -820,22 +895,6 @@ body, html {
     border-radius: 8px;
     border: 1px solid #ccc;
     box-sizing: border-box;
-}
-
-.submit-btn {
-    width: 100%;
-    padding: 12px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    margin-top: 15px;
-    transition: background-color 0.3s;
-}
-
-.submit-btn:hover {
-    background-color: #218838;
 }
 
 /* Right Side - Sign Up */
@@ -1015,3 +1074,105 @@ body, html {
 .social-btn:hover {
     opacity: 0.9;
 }
+
+.identify-container {
+    background-color: #333333; /* Darker background for contrast */
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    width: 100%;
+    margin: 20px auto;
+    text-align: center;
+    color: white; /* Adjust text color for readability */
+}
+
+.identify-container h2 {
+    margin-bottom: 15px;
+    color: #50c9ce; /* Color matching the theme */
+}
+
+.identify-container input[type="file"] {
+    margin-bottom: 15px;
+    padding: 10px;
+}
+
+.identify-container button {
+    padding: 12px 20px;
+    background-color: #007bff;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.identify-container button:hover {
+    background-color: #0056b3;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Sound Wave Animation */
+.sound-wave {
+    display: none; /* Initially hidden */
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem; /* Increased gap for larger bars */
+    width: 8rem; /* Increase width for larger wave */
+    height: 5rem; /* Increase height for larger wave */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.sound-wave div {
+    width: 1rem; /* Increase width of each bar */
+    height: 0.8rem; /* Increase height of each bar */
+    border-radius: 0.5rem;
+    background: orange;
+    animation: audio-wave 2.2s infinite ease-in-out;
+}
+
+.sound-wave div:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.sound-wave div:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+.sound-wave div:nth-child(4) {
+    animation-delay: 0.6s;
+}
+
+.sound-wave div:nth-child(5) {
+    animation-delay: 0.8s;
+}
+
+@keyframes audio-wave {
+    0% {
+        height: 6px;
+        transform: translateY(0px);
+        background: #ff8e3a;
+    }
+
+    25% {
+        height: 40px;
+        transform: translateY(-5px) scaleY(1.7);
+        background: #ed509e;
+    }
+
+    50% {
+        height: 6px;
+        transform: translateY(0px);
+        background: #9c73f8;
+    }
+
+    100% {
+        height: 6px;
+        transform: translateY(0px);
+        background: #0fccce;
+    }
+}
+
