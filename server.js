@@ -7,7 +7,7 @@ const axios = require('axios');
 const ffmpeg = require('fluent-ffmpeg');
 
 const app = express();
-const PORT = 3000;
+const PORT = 3006;
 
 // Set up AcrCloud config
 const acr = new AcrCloud({
@@ -81,6 +81,7 @@ if (lyrics === 'Lyrics not found') {
         console.error('Genius API error:', err);
     }
 }
+// Assuming the metadata contains a preview URL and album art URL
 res.json({
     success: true,
     title: title,
