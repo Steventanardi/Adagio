@@ -27,10 +27,13 @@
 
     <div class="container">
         <div class="song-info">
-            <h1 id="songTitle"></h1>
+            <h2>Song Information</h2>
+            <p><strong>Title:</strong> <span id="songTitle"></span></p>
             <p><strong>Artist:</strong> <span id="songArtist"></span></p>
             <p><strong>Album:</strong> <span id="songAlbum"></span></p>
+            <p><strong>Genre:</strong> <span id="songGenre"></span></p> <!-- New line for Genre -->
         </div>
+        
 
         <div class="video-section">
             <h2>Music Video</h2>
@@ -42,6 +45,8 @@
             <pre id="songLyrics" class="song-lyrics" style="white-space: pre-wrap;"></pre>
         </div>
         
+        
+        
         <button onclick="goBack()" class="back-button">Go Back</button>
     </div>
 
@@ -52,14 +57,16 @@
             const title = urlParams.get('title');
             const artist = urlParams.get('artist');
             const album = urlParams.get('album');
+            const genre = urlParams.get('genre'); // Retrieve genre from URL parameters
             const lyrics = urlParams.get('lyrics');
             const videoUrl = urlParams.get('videoUrl');
-
+        
             document.getElementById('songTitle').textContent = title;
             document.getElementById('songArtist').textContent = artist;
             document.getElementById('songAlbum').textContent = album;
+            document.getElementById('songGenre').textContent = genre; // Display the genre
             document.getElementById('songLyrics').textContent = decodeURIComponent(lyrics);
-
+        
             if (videoUrl && videoUrl !== '') {
                 const videoPlayer = document.getElementById('videoPlayer');
                 videoPlayer.innerHTML = `<iframe width="560" height="315" src="${videoUrl}" frameborder="0" allowfullscreen></iframe>`;
@@ -68,6 +75,7 @@
                 videoPlayer.innerHTML = '<p>Music video not available.</p>';
             }
         });
+        
 
         function goBack() {
             window.history.back();

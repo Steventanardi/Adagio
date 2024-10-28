@@ -7,13 +7,13 @@ const axios = require('axios');
 const ffmpeg = require('fluent-ffmpeg');
 
 const app = express();
-const PORT = 3006;
+const PORT = 3000;
 
 // Set up AcrCloud config
 const acr = new AcrCloud({
-    host: 'identify-ap-southeast-1.acrcloud.com', // Your AcrCloud host
-    access_key: '[ACR_KEY_LEAKED]', // Replace with your actual access key
-    access_secret: '[ACR_SECRET_LEAKED]' // Replace with your actual access secret
+    host: 'identify-ap-southeast-1.acrcloud.com', 
+    access_key: '[ACR_KEY_LEAKED]',
+    access_secret: '[ACR_SECRET_LEAKED]'
 });
 
 // Set up multer for file uploads
@@ -24,6 +24,24 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage: storage });
+
+// Function to fetch lyrics based on the song's language
+async function fetchLyrics(artist, title, language) {
+    let lyrics = 'Lyrics not found';
+
+    if (language === 'zh') {
+        lyrics = await fetchChineseLyrics(artist, title);
+    } else {
+        try {
+            const lyricsResponse = await axios.get(`https://api.lyrics.ovh/v1/${artist}/${title}`);
+            lyrics = lyricsResponse.data.lyrics || lyrics;
+        } catch (err) {
+            console.error('Lyrics.ovh API error:', err);
+        }
+    }
+
+    return lyrics;
+}
 
 // Serve static files
 app.use(express.static('public'));
@@ -42,57 +60,28 @@ app.post('/upload', upload.single('musicFile'), async (req, res) => {
             .on('end', async () => {
                 try {
                     const data = await acr.identify(fs.readFileSync(trimmedPath));
-                    console.log('AcrCloud Response:', data); // Log the response to check its structure
                     if (data.status && data.status.msg === 'Success') {
                         const metadata = data.metadata.music[0];
                         const title = metadata.title;
                         const artist = metadata.artists[0].name;
                         const album = metadata.album ? metadata.album.name : 'Unknown';
+                        const genre = metadata.genres && metadata.genres.length > 0 ? metadata.genres[0].name : 'Unknown'; // Extract genre
+                        const language = metadata.language || 'en'; // Use 'zh' if it's Chinese
+                        
+                        // Fetch lyrics based on the song's language
+                        const lyrics = await fetchLyrics(artist, title, language);
 
-                        // Use multiple lyrics APIs
-let lyrics = 'Lyrics not found';
-try {
-    // Try lyrics.ovh for full lyrics
-    const lyricsResponse = await axios.get(`https://api.lyrics.ovh/v1/${artist}/${title}`);
-    lyrics = lyricsResponse.data.lyrics || lyrics;
-} catch (err) {
-    console.error('Lyrics.ovh API error:', err);
-}
-
-if (lyrics === 'Lyrics not found') {
-    try {
-        const geniusResponse = await axios.get(`https://api.genius.com/search?q=${encodeURIComponent(artist + ' ' + title)}`, {
-            headers: {
-                'Authorization': `Bearer wyr2T27kCQ_I2VX9FW-JJiiesWvjohV1fZtZSykbX-rpHHsoYZ3cmtnHi_WBYWtB`
-            }
-        });
-
-        if (geniusResponse.data.response.hits.length > 0) {
-            // Instead of providing a link, fetch the lyrics directly if possible
-            const songId = geniusResponse.data.response.hits[0].result.id;
-            const songResponse = await axios.get(`https://api.genius.com/songs/${songId}`, {
-                headers: {
-                    'Authorization': `Bearer wyr2T27kCQ_I2VX9FW-JJiiesWvjohV1fZtZSykbX-rpHHsoYZ3cmtnHi_WBYWtB`
-                }
-            });
-
-        }
-    } catch (err) {
-        console.error('Genius API error:', err);
-    }
-}
-// Assuming the metadata contains a preview URL and album art URL
-res.json({
-    success: true,
-    title: title,
-    artist: artist,
-    album: album,
-    lyrics: lyrics,
-    albumArtUrl: metadata.album ? metadata.album.cover_image : '', // Album Art URL
-    previewUrl: metadata.preview_url || '' // Preview URL for the music player
-});
-
-
+                        // Respond with metadata, including genre
+                        res.json({
+                            success: true,
+                            title: title,
+                            artist: artist,
+                            album: album,
+                            genre: genre, // Include genre in the response
+                            lyrics: lyrics,
+                            albumArtUrl: metadata.album ? metadata.album.cover_image : '',
+                            previewUrl: metadata.preview_url || ''
+                        });
                     } else {
                         res.json({ success: false, title: data.metadata.music[0]?.title || null, artist: data.metadata.music[0]?.artists[0]?.name || null });
                     }
@@ -100,7 +89,6 @@ res.json({
                     console.error('Error recognizing song:', err);
                     res.status(500).json({ success: false, error: 'Error recognizing the song' });
                 } finally {
-                    // Remove temporary trimmed file
                     fs.unlink(trimmedPath, (err) => {
                         if (err) console.error('Error removing trimmed file:', err);
                     });

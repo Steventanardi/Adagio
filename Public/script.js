@@ -35,18 +35,20 @@ document.addEventListener('DOMContentLoaded', function () {
             const title = result.title;
             const artist = result.artist;
             const album = result.album;
+            const genre = result.genre; // Retrieve genre from the result
             const lyrics = encodeURIComponent(result.lyrics || 'Lyrics not available');
             const videoUrl = await getMusicVideoUrl(title, artist);
             const previewUrl = encodeURIComponent(result.previewUrl || '');
             const albumArtUrl = encodeURIComponent(result.albumArtUrl || '');
-
+    
             // Redirect to the result page with query parameters
-            const redirectUrl = `result.html?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}&lyrics=${lyrics}&videoUrl=${encodeURIComponent(videoUrl)}&albumArtUrl=${albumArtUrl}&previewUrl=${previewUrl}`;
+            const redirectUrl = `result.html?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}&genre=${encodeURIComponent(genre)}&lyrics=${lyrics}&videoUrl=${encodeURIComponent(videoUrl)}&albumArtUrl=${albumArtUrl}&previewUrl=${previewUrl}`;
             window.location.href = redirectUrl;
         } else {
             alert('Unable to recognize the song.');
         }
     }
+    
 
     // Handle file upload recognition
     identifyButton.addEventListener('click', function () {
@@ -184,3 +186,26 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const title = urlParams.get('title');
+    const artist = urlParams.get('artist');
+    const album = urlParams.get('album');
+    const lyrics = urlParams.get('lyrics');
+    const videoUrl = urlParams.get('videoUrl');
+
+    document.getElementById('songTitle').textContent = title;
+    document.getElementById('songArtist').textContent = artist;
+    document.getElementById('songAlbum').textContent = album;
+    document.getElementById('songLyrics').textContent = decodeURIComponent(lyrics);
+
+    if (videoUrl && videoUrl !== '') {
+        const videoPlayer = document.getElementById('videoPlayer');
+        videoPlayer.innerHTML = `<iframe width="560" height="315" src="${videoUrl}" frameborder="0" allowfullscreen></iframe>`;
+    } else {
+        const videoPlayer = document.getElementById('videoPlayer');
+        videoPlayer.innerHTML = '<p>Music video not available.</p>';
+    }
+});
+
