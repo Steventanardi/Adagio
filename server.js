@@ -108,69 +108,6 @@ app.post('/upload', upload.single('musicFile'), async (req, res) => {
     }
 });
 
-// Live Listening in Device
-app.post('/liveDevice', async (req, res) => {
-    try {
-        console.log('Attempting to capture system audio...');
-        const stream = await navigator.mediaDevices.getDisplayMedia({
-            video: false,
-            audio: true
-        });
-
-        if (stream) {
-            console.log('System audio stream captured successfully.');
-            const mediaRecorder = new MediaRecorder(stream);
-            let audioChunks = [];
-
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    audioChunks.push(event.data);
-                }
-            };
-
-            mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                const formData = new FormData();
-                formData.append('musicFile', audioBlob, 'systemAudio.wav');
-
-                fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        res.json({
-                            title: result.title,
-                            artist: result.artist,
-                            album: result.album,
-                            lyrics: result.lyrics,
-                        });
-                    } else {
-                        res.json({ error: 'Unable to identify the song' });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-            };
-
-            // Start recording after obtaining the stream
-            mediaRecorder.start();
-            setTimeout(() => {
-                mediaRecorder.stop();
-            }, 20000); // Stop recording after 20 seconds
-
-        } else {
-            console.error('Failed to obtain audio stream.');
-            res.status(500).json({ error: 'Unable to capture system audio. Make sure to allow permissions and select a screen with audio.' });
-        }
-    } catch (err) {
-        console.error('Error capturing system audio:', err);
-        res.status(500).json({ error: 'Unable to capture system audio. Make sure to allow permissions and select a screen with audio.' });
-    }
-});
-
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
