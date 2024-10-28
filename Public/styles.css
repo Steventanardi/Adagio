@@ -1,61 +1,178 @@
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f8f9fa;
-    color: #212529;
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #5b0060, #1e003c); /* Gradient from purple to dark blue */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed; /* Keeps the background fixed during scroll */
+    color: #333;
     margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    min-height: 100vh;
+    box-sizing: border-box;
 }
 
-.top-bar {
+
+header {
     width: 100%;
-    background-color: #343a40;
-    color: #ffffff;
-    padding: 15px;
-    text-align: center;
-    box-shadow: 0px 4px 2px -2px gray;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    background-color: #181434;
+    box-sizing: border-box;
+    position: fixed; /* Fixes the header at the top of the screen */
+    top: 0; /* Positions the header at the top */
+    left: 0;
+    z-index: 1000; /* Ensures the header stays on top of other content */
+    height: 80px; /* Adjust the height as needed */
+}
+
+
+.logo {
+    font-size: 2rem;
+    font-weight: bold;
+    color: white;
+}
+
+nav {
+    display: flex;
+    align-items: center;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+    margin-right: 30px; /* Space between list items */
+}
+
+nav ul li {
+    position: relative;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: white;
+    font-size: 18px;
+    transition: color 0.3s ease;
+}
+
+nav ul li a:hover {
+    color: #50c9ce; /* Light blue on hover */
+}
+
+/* Dropdown menu styling */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    background-color: #1e1e3f;
+    top: 100%;
+    left: 0;
+    min-width: 200px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    z-index: 1;
+}
+
+.dropdown:hover .dropdown-menu {
+    display: block;
+}
+
+/* Dropdown menu styling */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    background-color: #1e1e3f;
+    top: 100%;
+    left: 0;
+    min-width: 200px;
+    padding: 0; /* Remove padding */
+    margin: 0; /* Remove margin */
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+    z-index: 1;
+}
+
+.dropdown-menu li {
+    list-style: none;
+    padding: 0; /* Remove padding */
+    margin: 0; /* Remove margin */
+}
+
+.dropdown-menu li a {
+    display: block;
+    padding: 10px 20px;
+    margin: 0; /* Remove any margin */
+    text-decoration: none;
+    color: white;
+    font-size: 16px;
+    white-space: nowrap;
+    transition: background-color 0.3s ease;
+}
+
+.dropdown-menu li a:hover {
+    background-color: #50c9ce; /* Highlight on hover */
+    color: white; /* Ensure text stays white on hover */
+}
+
+/* Show the dropdown when hovering over the Features menu item */
+.dropdown:hover .dropdown-menu {
+    display: block;
+}
+
+/* Sign In Button Styling */
+.sign-in-btn {
+    background-color:#50c9ce; /* Light blue background */
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 18px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.sign-in-btn:hover {
+    background-color: #3ba1a7; /* Darker blue on hover */
 }
 
 .container {
     background-color: #ffffff;
-    padding: 40px;
-    border-radius: 10px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-    max-width: 600px;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
     width: 100%;
     text-align: center;
-    margin-top: 20px;
+    margin: 40px auto 100px auto; /* Adding margin to give space above audio player */
 }
 
 h1, h2 {
     margin-bottom: 20px;
-}
-
-.upload-section, .live-section {
-    margin-bottom: 30px;
+    font-weight: 500;
 }
 
 input[type="file"] {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     padding: 10px;
 }
 
 button {
-    padding: 10px 20px;
+    padding: 12px 20px;
     background-color: #007bff;
     color: #ffffff;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     cursor: pointer;
     margin: 10px;
+    transition: background-color 0.3s, box-shadow 0.3s;
 }
 
 button:hover {
     background-color: #0056b3;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 button:disabled {
@@ -64,9 +181,287 @@ button:disabled {
 }
 
 .result-box {
-    margin-top: 20px;
+    margin-top: 15px;
     padding: 15px;
-    background-color: #e9ecef;
+    background-color: #fafafa;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.music-player {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #ffffff;
+    color: #333;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    justify-content: space-between;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 20px;
+}
+
+.album-art {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+}
+
+.player-info {
+    text-align: left;
+    flex: 1;
+    overflow: hidden;
+}
+
+.player-info h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-info p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #777;
+}
+
+#seek-bar {
+    width: 150px;
+    appearance: none;
+    background: #ddd;
+    height: 5px;
     border-radius: 5px;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    outline: none;
+    margin: 0 10px;
+}
+
+#seek-bar::-webkit-slider-thumb {
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    background: #007bff;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.player-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.control-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.control-button:hover {
+    color: #007bff;
+}
+
+.timestamp {
+    font-size: 0.875rem;
+    color: #777;
+}
+
+
+footer {
+    width: 100%; /* Make the footer full width */
+    text-align: center;
+    padding: 20px 0; /* Adjust padding as needed */
+    background-color: #141433;
+    box-sizing: border-box; /* Include padding in width calculation */
+    position: relative; /* Optional: adjust if you want to keep it at the bottom */
+    left: 0; /* Align to the far left */
+    right: 0; /* Align to the far right */
+    bottom: 0; /* Stick to the bottom */
+}
+
+footer p {
+    color: #707070;
+}
+
+.hero {
+    height: 100vh;
+    background-image: url('/path-to-your-background-image.jpg'); /* Use a space-like background */
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.floating-sphere {
+    position: absolute;
+    top: 50%; /* Center vertically */
+    left: 50%; /* Center horizontally */
+    transform: translate(-50%, -50%); /* Center the element */
+    width: 150px;
+    height: 150px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    animation: float 4s ease-in-out infinite; /* Apply the animation */
+    box-shadow: 0px 0px 20px 10px rgba(255, 255, 255, 0.8); /* White glow */
+    cursor: pointer;
+}
+
+.overlay {
+    position: absolute;
+    top: 70%; /* Adjusted to be below the sphere */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    margin-top: 30px; /* Space between circle and text */
+}
+
+.overlay h1 {
+    color: white;
+    font-size: 4rem;
+    margin-bottom: 20px;
+    text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.8);
+}
+
+.overlay p {
+    color: white;
+    font-size: 1.5rem;
+    text-shadow: 0px 0px 5px rgba(255, 255, 255, 0.6);
+}
+
+
+.sphere-button {
+    display: block;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    line-height: 150px;
+    border-radius: 50%;
+    background-color: transparent;
+    text-decoration: none;
+}
+
+.sphere-button:hover {
+    background-color: rgba(80, 201, 206, 0.1); /* Optional hover effect */
+}
+
+.microphone-wave {
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%; /* Center vertically */
+    left: 50%; /* Center horizontally */
+    transform: translate(-50%, -50%); /* Center the element */
+    background-color: rgba(80, 201, 206, 0.5);
+    transition: width 0.4s ease, height 0.4s ease;
+    animation: pulse 1.2s infinite; /* Add animation for pulsating effect */
+    display: none; /* Initially hidden */
+}
+
+@keyframes pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+.active-wave {
+    width: 150px; /* Adjust the size as needed */
+    height: 150px; /* Adjust the size as needed */
+}
+
+.sound-wave {
+    display: none; /* Initially hidden */
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem; /* Increased gap for larger bars */
+    width: 8rem; /* Increase width for larger wave */
+    height: 5rem; /* Increase height for larger wave */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.sound-wave div {
+    width: 1rem; /* Increase width of each bar */
+    height: 0.8rem; /* Increase height of each bar */
+    border-radius: 0.5rem;
+    background: orange;
+    animation: audio-wave 2.2s infinite ease-in-out;
+}
+
+.sound-wave div:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.sound-wave div:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+.sound-wave div:nth-child(4) {
+    animation-delay: 0.6s;
+}
+
+.sound-wave div:nth-child(5) {
+    animation-delay: 0.8s;
+}
+
+@keyframes audio-wave {
+    0% {
+        height: 6px;
+        transform: translateY(0px);
+        background: #ff8e3a;
+    }
+
+    25% {
+        height: 40px;
+        transform: translateY(-5px) scaleY(1.7);
+        background: #ed509e;
+    }
+
+    50% {
+        height: 6px;
+        transform: translateY(0px);
+        background: #9c73f8;
+    }
+
+    100% {
+        height: 6px;
+        transform: translateY(0px);
+        background: #0fccce;
+    }
+}
+
+.hidden {
+    display: none;
+}
+
+@keyframes float {
+    0% {
+        transform: translate(-50%, -50%) translateY(0);
+    }
+    50% {
+        transform: translate(-50%, -50%) translateY(-20px); /* Adjust -20px for bounce height */
+    }
+    100% {
+        transform: translate(-50%, -50%) translateY(0);
+    }
 }
