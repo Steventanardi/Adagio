@@ -15,9 +15,9 @@
         <div class="signup-box">
             <h2>Sign Up</h2>
             <form>
-                <input type="text" placeholder="Full Name" required class="signup-input">
-                <input type="email" placeholder="Email Address" required class="signup-input">
-                <input type="password" placeholder="Password" required class="signup-input">
+                <input type="text" placeholder="Full Name" required class="signup-input" name="full_name">
+                <input type="email" placeholder="Email Address" required class="signup-input" name="email">
+                <input type="password" placeholder="Password" required class="signup-input" name="password">
                 <input type="password" placeholder="Confirm Password" required class="signup-input">
                 
                 <button type="submit" class="signup-btn">Sign Up</button>
@@ -33,6 +33,29 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+        
+            if (data.password !== formData.get('confirm_password')) {
+                alert('Passwords do not match');
+                return;
+            }
+        
+            const response = await fetch('/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        
+            const result = await response.json();
+            alert(result.message);
+            if (response.ok) window.location.href = 'signin.html';
+        });
+    </script>
 
     <script>
         function redirectToHome() {

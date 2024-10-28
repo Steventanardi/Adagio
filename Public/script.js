@@ -32,25 +32,26 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Function to handle song recognition and redirect to result.html
-    async function handleSongRecognition(result) {
-        if (result.success) {
-            const title = result.title;
-            const artist = result.artist;
-            const album = result.album;
-            const genre = result.genre; // Retrieve genre from the result
-            const lyrics = encodeURIComponent(result.lyrics || 'Lyrics not available');
-            const videoUrl = await getMusicVideoUrl(title, artist);
-            const previewUrl = encodeURIComponent(result.previewUrl || '');
-            const albumArtUrl = encodeURIComponent(result.albumArtUrl || '');
-    
-            // Redirect to the result page with query parameters
-            const redirectUrl = `result.html?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}&genre=${encodeURIComponent(genre)}&lyrics=${lyrics}&videoUrl=${encodeURIComponent(videoUrl)}&albumArtUrl=${albumArtUrl}&previewUrl=${previewUrl}`;
-            window.location.href = redirectUrl;
-        } else {
-            alert('Unable to recognize the song.');
-        }
+    // Updated function to handle song recognition and video URL retrieval
+async function handleSongRecognition(result) {
+    if (result.success) {
+        const title = result.title;
+        const artist = result.artist;
+        const album = result.album;
+        const genre = result.genre;
+        const lyrics = encodeURIComponent(result.lyrics || 'Lyrics not available');
+
+        // Retrieve the music video URL
+        const videoUrl = await getMusicVideoUrl(title, artist);
+
+        // Redirect to result.html with metadata and video URL
+        const redirectUrl = `result.html?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}&genre=${encodeURIComponent(genre)}&lyrics=${lyrics}&videoUrl=${encodeURIComponent(videoUrl)}`;
+        window.location.href = redirectUrl;
+    } else {
+        alert('Unable to recognize the song.');
     }
-    
+}
+
 
     /// Function to show the sound wave animation and hide floating spheres
     function activateSoundWave() {
@@ -89,6 +90,24 @@ document.addEventListener('DOMContentLoaded', function () {
             alert('Please select a music file before identifying.');
         }
     });
+
+    async function getSpotifyAccessToken() {
+        const authString = Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64');
+        
+        const response = await axios.post(
+            'https://accounts.spotify.com/api/token',
+            new URLSearchParams({ grant_type: 'client_credentials' }),
+            {
+                headers: {
+                    Authorization: `Basic ${authString}`,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+            }
+        );
+        
+        return response.data.access_token;
+    }
+    
 
     // Event Listener for Start Listening through Microphone Button
     startListeningMicButton.addEventListener('click', async function () {

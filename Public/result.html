@@ -33,22 +33,52 @@
             <p><strong>Album:</strong> <span id="songAlbum"></span></p>
             <p><strong>Genre:</strong> <span id="songGenre"></span></p> <!-- New line for Genre -->
         </div>
-        
 
-        <div class="video-section">
+        <div class="video-player" id="videoPlayerContainer">
             <h2>Music Video</h2>
-            <div id="videoPlayer" class="video-player"></div>
+            <iframe
+                id="videoPlayer"
+                width="560"
+                height="315"
+                frameborder="0"
+                allow="autoplay; encrypted-media"
+                allowfullscreen
+                src=""
+            ></iframe>
         </div>
 
         <div class="lyrics-section">
             <h2>Lyrics</h2>
             <pre id="songLyrics" class="song-lyrics" style="white-space: pre-wrap;"></pre>
         </div>
-        
-        
-        
-        <button onclick="goBack()" class="back-button">Go Back</button>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const title = urlParams.get('title');
+            const artist = urlParams.get('artist');
+            const album = urlParams.get('album');
+            const genre = urlParams.get('genre');
+            const lyrics = urlParams.get('lyrics');
+            const videoUrl = urlParams.get('videoUrl'); // Get the YouTube video URL
+    
+            document.getElementById('songTitle').textContent = title;
+            document.getElementById('songArtist').textContent = artist;
+            document.getElementById('songAlbum').textContent = album;
+            document.getElementById('songGenre').textContent = genre;
+            document.getElementById('songLyrics').textContent = decodeURIComponent(lyrics);
+    
+            console.log("Embed YouTube Video URL:", videoUrl); // Log video URL in browser console
+    
+            if (videoUrl) {
+                document.getElementById('videoPlayer').src = videoUrl;
+                document.getElementById('videoPlayerContainer').style.display = 'block';
+            } else {
+                document.getElementById('videoPlayerContainer').innerHTML = '<p>Music video not available.</p>';
+            }
+        });
+    </script>
 
     <script>
         // Load song information from URL parameters
@@ -75,13 +105,6 @@
                 videoPlayer.innerHTML = '<p>Music video not available.</p>';
             }
         });
-        
-
-        function goBack() {
-            window.history.back();
-        }
-    </script>
-    <script>
         function redirectToHome() {
             window.location.href = 'index.html';
         }

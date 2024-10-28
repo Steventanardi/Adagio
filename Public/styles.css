@@ -539,12 +539,16 @@ button:disabled {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
-    font-family: 'Courier New', Courier, monospace; /* Monospaced for lyrics */
+    font-family: 'Courier New', Courier, monospace;
     font-size: 1rem;
     color: #333;
-    max-height: 500px; /* Limit height with scrollbar */
-    overflow-y: auto; /* Add vertical scroll if content is too long */
+    max-height: 500px;
+    overflow-y: auto;
+    white-space: pre-wrap; /* Ensures line breaks are respected */
+    line-height: 1.5; /* Increase line spacing for readability */
+    word-wrap: break-word; /* Ensure long lines break */
 }
+
 
 /* Back Button Styling */
 .back-button {
