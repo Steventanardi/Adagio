@@ -4,30 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <title>Song Information</title>
 </head>
 <body>
+    <header>
+        <div class="logo" onclick="redirectToHome()">ADAGIO<sup>&trade;</sup></div>
+        <nav>
+            <ul>
+                <li><a href="#">About</a></li>
+                <li class="dropdown">
+                    <a href="#">Features</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#">Create Playlist</a></li>
+                        <li><a href="#">Search History</a></li>
+                        <li><a href="#">Find Similar Songs</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
     <div class="container">
-        <!-- Song Information Section -->
         <div class="song-info">
             <h1 id="songTitle"></h1>
             <p><strong>Artist:</strong> <span id="songArtist"></span></p>
             <p><strong>Album:</strong> <span id="songAlbum"></span></p>
         </div>
 
-        <!-- Music Video Section -->
         <div class="video-section">
             <h2>Music Video</h2>
             <div id="videoPlayer" class="video-player"></div>
         </div>
 
-        <!-- Lyrics Section -->
         <div class="lyrics-section">
             <h2>Lyrics</h2>
             <pre id="songLyrics" class="song-lyrics" style="white-space: pre-wrap;"></pre>
         </div>
         
-        <!-- Go Back Button -->
         <button onclick="goBack()" class="back-button">Go Back</button>
     </div>
 
@@ -46,21 +60,24 @@
             document.getElementById('songAlbum').textContent = album;
             document.getElementById('songLyrics').textContent = decodeURIComponent(lyrics);
 
-            // Embed the YouTube video if available
             if (videoUrl && videoUrl !== '') {
                 const videoPlayer = document.getElementById('videoPlayer');
                 videoPlayer.innerHTML = `<iframe width="560" height="315" src="${videoUrl}" frameborder="0" allowfullscreen></iframe>`;
             } else {
-                // If video URL is empty, show a message instead
                 const videoPlayer = document.getElementById('videoPlayer');
                 videoPlayer.innerHTML = '<p>Music video not available.</p>';
             }
         });
 
-        // Function to go back to the previous page
         function goBack() {
             window.history.back();
         }
     </script>
+    <script>
+        function redirectToHome() {
+            window.location.href = 'index.html';
+        }
+    </script>
+    
 </body>
 </html>

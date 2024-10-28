@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <title>Sign In</title>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-left">
+            <header>
+                <div class="logo" onclick="redirectToHome()">ADAGIO<sup>&trade;</sup></div>
+            </header>
+            
+            <div class="auth-content">
+                <h2>Login to Your Account</h2>
+                <p>Login using social networks</p>
+                
+                <!-- Social Media Buttons -->
+                <div class="social-login">
+                    <button class="social-btn fb-btn">f</button>
+                    <button class="social-btn google-btn">G+</button>
+                    <button class="social-btn linkedin-btn">in</button>
+                </div>
+                
+                <p>OR</p>
+
+                <form>
+                    <input type="email" placeholder="Email" required class="input-field">
+                    <input type="password" placeholder="Password" required class="input-field">
+                    <button type="submit" class="submit-btn">Sign In</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="auth-right">
+            <div class="signup-invitation">
+                <h2>New Here?</h2>
+                <p>Sign up and discover a great amount of new opportunities!</p>
+                <a href="signup.html" class="signup-btn">Sign Up</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function redirectToHome() {
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

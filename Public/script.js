@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // Selectors for different buttons and elements
     const audioPlayer = document.getElementById('audioPlayer');
     const sphereButton = document.querySelector('.sphere-button');
-    const stopListeningDeviceButton = document.getElementById('stopListeningDevice');
     const startListeningMicButton = document.getElementById('startListeningMic');
     const stopListeningMicButton = document.getElementById('stopListeningMic');
     const identifyButton = document.getElementById('identifyButton');
@@ -13,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Function to search for the music video using YouTube API
     async function getMusicVideoUrl(title, artist) {
-        const apiKey = '[GOOGLE_YOUTUBE_LEAKED]'; // Your YouTube API key
+        const apiKey = '[GOOGLE_YOUTUBE_LEAKED]'; 
         const query = `${title} ${artist} official music video`;
         const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&videoEmbeddable=true&key=${apiKey}`;
 
@@ -28,7 +27,6 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Error fetching YouTube video:', error);
         }
 
-        // Return an empty string if no video is found
         return '';
     }
 
@@ -92,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 };
 
                 mediaRecorderMic.onstop = async () => {
-                    clearTimeout(micTimeout); // Clear the timeout if it didn't expire
+                    clearTimeout(micTimeout); 
                     const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
                     const formData = new FormData();
                     formData.append('musicFile', audioBlob, 'micAudio.wav');
@@ -110,7 +108,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
                 };
 
-                // Start recording for a maximum duration of 20 seconds
                 mediaRecorderMic.start();
                 micTimeout = setTimeout(() => {
                     if (mediaRecorderMic.state === "recording") {
@@ -127,7 +124,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Stop microphone listening manually
     stopListeningMicButton.addEventListener('click', () => {
         if (mediaRecorderMic && mediaRecorderMic.state === "recording") {
             mediaRecorderMic.stop();
@@ -175,13 +171,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
                 };
     
-                // Start recording and stop after 20 seconds
                 mediaRecorder.start();
                 setTimeout(() => {
                     if (mediaRecorder.state === "recording") {
                         mediaRecorder.stop();
                     }
-                }, 20000); // Stop recording after 20 seconds
+                }, 20000); 
     
                 sphereButton.disabled = true;
                 stopListeningDeviceButton.disabled = false;
@@ -203,7 +198,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 document.addEventListener('DOMContentLoaded', function () {
-    // Function to handle song recognition and redirect to result.html
     async function handleSongRecognition(result) {
         if (result.success) {
             const title = result.title;
@@ -213,10 +207,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const previewUrl = result.previewUrl; // Use the preview URL for the audio player
             const albumArtUrl = encodeURIComponent(result.albumArtUrl || '');
 
-            // Fetch the music video URL
             const videoUrl = await getMusicVideoUrl(title, artist);
 
-            // Redirect to the result page with query parameters
             const redirectUrl = `result.html?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}&lyrics=${lyrics}&videoUrl=${encodeURIComponent(videoUrl)}&albumArtUrl=${albumArtUrl}&previewUrl=${encodeURIComponent(previewUrl)}`;
             window.location.href = redirectUrl;
         } else {

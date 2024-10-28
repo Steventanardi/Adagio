@@ -690,3 +690,328 @@ footer p {
     border-radius: 50%;
     cursor: pointer;
 }
+
+/* Sign In Button Styling */
+.sign-in-container {
+    position: relative;
+    display: inline-block;
+}
+
+.sign-in-btn {
+    background-color: #50c9ce; /* Light blue background */
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 18px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+/* Hide the dropdown buttons initially */
+.dropdown-buttons {
+    display: none;
+    position: absolute;
+    top: 100%; /* Position directly below the main button */
+    left: 0;
+    z-index: 10;
+    flex-direction: column;
+    background-color: #1e1e3f; /* Background color for dropdown */
+    border-radius: 5px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    margin-top: 5px; /* Small margin from the main button */
+}
+
+.sign-in-container:hover .dropdown-buttons {
+    display: flex;
+}
+
+/* Styling for the hover buttons */
+.hover-btn {
+    display: block;
+    padding: 10px 15px;
+    color: white;
+    text-decoration: none;
+    background-color: #50c9ce; /* Light blue for dropdown buttons */
+    border-radius: 5px;
+    margin-bottom: 5px; /* Space between buttons */
+    transition: background-color 0.3s;
+}
+
+.hover-btn:hover {
+    background-color: #3ba1a7; /* Darker blue on hover */
+}
+
+/* Base styles */
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+    background-color: #f4f7fc;
+    color: #333;
+}
+
+/* Auth Container Styles */
+.auth-container {
+    display: flex;
+    height: 100vh;
+}
+
+/* Left Side - Sign In */
+.auth-left {
+    background-color: #ffffff;
+    flex: 1;
+    padding: 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.auth-content {
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+}
+
+.auth-content h2 {
+    margin-bottom: 20px;
+    font-weight: 500;
+    font-size: 1.8rem;
+    color: #333;
+}
+
+.auth-content p {
+    margin: 10px 0;
+    color: #555;
+}
+
+.social-login {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.social-btn {
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 50%;
+    font-size: 18px;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.fb-btn { background-color: #3b5998; }
+.google-btn { background-color: #db4437; }
+.linkedin-btn { background-color: #0077b5; }
+
+.social-btn:hover {
+    opacity: 0.9;
+}
+
+.input-field {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+.submit-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: background-color 0.3s;
+}
+
+.submit-btn:hover {
+    background-color: #218838;
+}
+
+/* Right Side - Sign Up */
+.auth-right {
+    background: linear-gradient(135deg, #50c9ce, #1e1e3f);
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+}
+
+.signup-invitation {
+    max-width: 300px;
+}
+
+.signup-invitation h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+.signup-invitation p {
+    margin-bottom: 30px;
+}
+
+.signup-btn {
+    background-color: #ffffff;
+    color: #50c9ce;
+    padding: 12px 30px;
+    border-radius: 30px;
+    font-size: 16px;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.signup-btn:hover {
+    background-color: #50c9ce;
+    color: #ffffff;
+}
+
+/* General styles */
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+    background-color: #f4f7fc;
+    color: #333;
+}
+
+/* Signup Container */
+.signup-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #eef1fa;
+}
+
+.signup-box {
+    background-color: #ffffff;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+}
+
+.signup-box h2 {
+    margin-bottom: 20px;
+    font-size: 2rem;
+    color: #333;
+    font-weight: 500;
+}
+
+/* Signup Form */
+.signup-input {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    box-sizing: border-box;
+    outline: none;
+    font-size: 1rem;
+    background-color: #f9f9f9;
+}
+
+.signup-btn {
+    width: 90%;
+    padding: 15px;
+    background-color: #000;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: background-color 0.3s ease;
+}
+
+.signup-btn:hover {
+    background-color: #333;
+}
+
+/* Login Link */
+.login-link {
+    margin-top: 10px;
+    color: #555;
+}
+
+.login-link a {
+    color: #555;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.login-link a:hover {
+    text-decoration: underline;
+}
+
+/* Divider */
+.divider {
+    margin: 20px 0;
+    font-size: 1rem;
+    color: #999;
+    position: relative;
+}
+
+.divider:before, .divider:after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background: #ddd;
+}
+
+.divider:before {
+    left: 0;
+}
+
+.divider:after {
+    right: 0;
+}
+
+/* Social Signup Buttons */
+.social-signup {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.social-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    color: white;
+}
+
+/* Specific Styles for Google and Facebook buttons */
+.google-signup {
+    background-color: #4285F4;
+}
+
+.facebook-signup {
+    background-color: #3b5998;
+}
+
+.social-btn:hover {
+    opacity: 0.9;
+}

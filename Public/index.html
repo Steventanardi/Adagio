@@ -9,7 +9,7 @@
 </head>
 <body>
     <header>
-        <div class="logo">ADAGIO<sup>&trade;</sup></div>
+        <div class="logo" onclick="redirectToHome()">ADAGIO<sup>&trade;</sup></div>
         <nav>
             <ul>
                 <li><a href="#">About</a></li>
@@ -21,7 +21,7 @@
                         <li><a href="#">Find Similar Songs</a></li>
                     </ul>
                 </li>
-                <li><a href="#" class="sign-in-btn">Sign In</a></li>
+                <li><a href="signin.html" class="sign-in-btn">Sign In</a></li>
             </ul>
         </nav>
     </header>
@@ -34,7 +34,6 @@
                 <div class="microphone-wave" style="display: none;"></div>
             </div>
         
-            <!-- Text content should be below the floating-sphere -->
             <div class="overlay">
                 <h1>Hello, I'm Adagio.</h1>
                 <p>Assistant for Music Recognition</p>
@@ -54,22 +53,14 @@
             <div></div>
         </div>
     </section>
-    
 
-    <!-- Existing Container Section -->
+    <!-- Container -->
     <div class="container">
         <div class="upload-section">
             <h2>Identify Your Music</h2>
             <input type="file" id="musicInput" accept="audio/*">
             <button id="identifyButton">Identify Song</button>
             <div id="result" class="result-box"></div>
-        </div>
-
-        <!-- Live Listening Section -->
-        <div class="live-section">
-            <h2>Live Listening in Device</h2>
-            <button id="stopListeningDevice" disabled>Stop Listening in Device</button>
-            <div id="liveResultDevice" class="result-box"></div>
         </div>
 
         <div class="live-section">
@@ -84,6 +75,12 @@
         <p>&copy; 2024 Adagio</p>
     </footer>
 
+    <script>
+        function redirectToHome() {
+            window.location.href = 'index.html';
+        }
+    </script>
+    
     <script src="script.js"></script>
 </body>
 </html>

@@ -61,8 +61,6 @@ try {
 
 if (lyrics === 'Lyrics not found') {
     try {
-        // Use an alternative API or remove fallback to Genius link-based behavior
-        // Replace with another API if possible
         const geniusResponse = await axios.get(`https://api.genius.com/search?q=${encodeURIComponent(artist + ' ' + title)}`, {
             headers: {
                 'Authorization': `Bearer wyr2T27kCQ_I2VX9FW-JJiiesWvjohV1fZtZSykbX-rpHHsoYZ3cmtnHi_WBYWtB`
@@ -78,14 +76,11 @@ if (lyrics === 'Lyrics not found') {
                 }
             });
 
-            // Ideally, we should scrape lyrics from the song's page if necessary (requires permission)
-            // Currently, Genius doesn't provide full lyrics directly in their API response
         }
     } catch (err) {
         console.error('Genius API error:', err);
     }
 }
-// Assuming the metadata contains a preview URL and album art URL
 res.json({
     success: true,
     title: title,
