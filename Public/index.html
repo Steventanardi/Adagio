@@ -8,55 +8,9 @@
     <title>Music Recognition App</title>
 </head>
 <body>
-    <header>
-        <div class="logo">ADAGIO<sup>&trade;</sup></div>
-        <nav>
-            <ul>
-                <li><a href="#">About</a></li>
-                <li class="dropdown">
-                    <a href="#">Features</a>
-                    <ul class="dropdown-menu">
-                        <li><a href="#">Create Playlist</a></li>
-                        <li><a href="#">Search History</a></li>
-                        <li><a href="#">Find Similar Songs</a></li>
-                    </ul>
-                </li>
-                <li><a href="#" class="sign-in-btn">Sign In</a></li>
-            </ul>
-        </nav>
-    </header>
-
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="floating-sphere-container">
-            <div class="floating-sphere">
-                <a href="#" class="sphere-button"></a>
-                <div class="microphone-wave" style="display: none;"></div>
-            </div>
-        
-            <!-- Text content should be below the floating-sphere -->
-            <div class="overlay">
-                <h1>Hello, I'm Adagio.</h1>
-                <p>Assistant for Music Recognition</p>
-            </div>
-        </div>  
-    
-        <div class="mic" style="display: none;">
-            <i class="mic-icon"></i>
-            <div class="mic-shadow"></div>
-        </div>
-        
-        <div class="sound-wave">
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-        </div>
-    </section>
-    
-
-    <!-- Existing Container Section -->
+    <div class="top-bar">
+        <h1>Music Recognition App</h1>
+    </div>
     <div class="container">
         <div class="upload-section">
             <h2>Identify Your Music</h2>
@@ -65,9 +19,9 @@
             <div id="result" class="result-box"></div>
         </div>
 
-        <!-- Live Listening Section -->
         <div class="live-section">
             <h2>Live Listening in Device</h2>
+            <button id="startListeningDevice">Start Listening in Device</button>
             <button id="stopListeningDevice" disabled>Stop Listening in Device</button>
             <div id="liveResultDevice" class="result-box"></div>
         </div>
@@ -80,27 +34,27 @@
         </div>
     </div>
 
-    <!-- Music Player (Initially Hidden) -->
-    <div id="musicPlayer" class="music-player hidden">
+    <div id="musicPlayer" class="music-player">
         <img id="albumArt" src="default_album_art.jpg" alt="Album Art" class="album-art">
         <div class="player-info">
-            <h3 id="songTitle">If I Were a Boy</h3>
-            <p id="songArtist">Beyoncé</p>
+            <h3 id="songTitle">As You Fade Away</h3>
+            <p id="songArtist">Vetrivel Ravi (Hipop)</p>
         </div>
-        <input type="range" id="seek-bar" value="0" max="100">
-        <div class="player-controls">
-            <button id="playPauseButton" class="control-button">⏯️</button>
-            <button id="stopButton" class="control-button">⏹️</button>
-        </div>
+        <input type="range" id="seek-bar" value="0" max="100" class="seek-bar">
         <div class="timestamp">
-            <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+            <span id="currentTime">0:09</span> / <span id="duration">4:16</span>
+        </div>
+        <div class="player-controls">
+            <button id="prevButton" class="control-button">⏮️</button>
+            <button id="playPauseButton" class="control-button">⏯️</button>
+            <button id="nextButton" class="control-button">⏭️</button>
+        </div>
+        <div class="volume-control">
+            <button id="muteButton" class="control-button">🔇</button>
+            <input type="range" id="volume-bar" min="0" max="1" step="0.01" value="1">
         </div>
     </div>
-
-    <footer>
-        <p>&copy; 2024 Adagio</p>
-    </footer>
-
+    
     <script src="script.js"></script>
 </body>
 </html>
