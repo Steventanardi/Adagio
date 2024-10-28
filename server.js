@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const AcrCloud = require('acrcloud');
 const axios = require('axios');
-const ffmpeg = require('fluent-ffmpeg'); // Import ffmpeg for audio processing
+const ffmpeg = require('fluent-ffmpeg');
 
 const app = express();
 const PORT = 3000;
@@ -50,41 +50,53 @@ app.post('/upload', upload.single('musicFile'), async (req, res) => {
                         const album = metadata.album ? metadata.album.name : 'Unknown';
 
                         // Use multiple lyrics APIs
-                        let lyrics = 'Lyrics not found';
-                        try {
-                            // Try lyrics.ovh
-                            const lyricsResponse = await axios.get(`https://api.lyrics.ovh/v1/${artist}/${title}`);
-                            lyrics = lyricsResponse.data.lyrics || lyrics;
-                        } catch (err) {
-                            console.error('Lyrics.ovh API error:', err);
-                        }
+let lyrics = 'Lyrics not found';
+try {
+    // Try lyrics.ovh for full lyrics
+    const lyricsResponse = await axios.get(`https://api.lyrics.ovh/v1/${artist}/${title}`);
+    lyrics = lyricsResponse.data.lyrics || lyrics;
+} catch (err) {
+    console.error('Lyrics.ovh API error:', err);
+}
 
-                        if (lyrics === 'Lyrics not found') {
-                            try {
-                                // Try Genius API
-                                const geniusResponse = await axios.get(`https://api.genius.com/search?q=${encodeURIComponent(artist + ' ' + title)}`, {
-                                    headers: {
-                                        'Authorization': `Bearer VFSt-kKvWqpETgdv_8S9VJz9wAYOX3OVpRG5MSwFwUXgN3v4kvNvtF9TzUk9SJkl`
-                                    }
-                                });
-                                if (geniusResponse.data.response.hits.length > 0) {
-                                    const songPath = geniusResponse.data.response.hits[0].result.url;
-                                    lyrics = `Full lyrics available [here](${songPath})`;
-                                }
-                            } catch (err) {
-                                console.error('Genius API error:', err);
-                            }
-                        }
+if (lyrics === 'Lyrics not found') {
+    try {
+        // Use an alternative API or remove fallback to Genius link-based behavior
+        // Replace with another API if possible
+        const geniusResponse = await axios.get(`https://api.genius.com/search?q=${encodeURIComponent(artist + ' ' + title)}`, {
+            headers: {
+                'Authorization': `Bearer wyr2T27kCQ_I2VX9FW-JJiiesWvjohV1fZtZSykbX-rpHHsoYZ3cmtnHi_WBYWtB`
+            }
+        });
 
-                        res.json({
-                            success: true,
-                            title: title,
-                            artist: artist,
-                            album: album,
-                            lyrics: lyrics,
-                            albumArtUrl: metadata.album ? metadata.album.cover_image : '',
-                            previewUrl: ''
-                        });
+        if (geniusResponse.data.response.hits.length > 0) {
+            // Instead of providing a link, fetch the lyrics directly if possible
+            const songId = geniusResponse.data.response.hits[0].result.id;
+            const songResponse = await axios.get(`https://api.genius.com/songs/${songId}`, {
+                headers: {
+                    'Authorization': `Bearer wyr2T27kCQ_I2VX9FW-JJiiesWvjohV1fZtZSykbX-rpHHsoYZ3cmtnHi_WBYWtB`
+                }
+            });
+
+            // Ideally, we should scrape lyrics from the song's page if necessary (requires permission)
+            // Currently, Genius doesn't provide full lyrics directly in their API response
+        }
+    } catch (err) {
+        console.error('Genius API error:', err);
+    }
+}
+// Assuming the metadata contains a preview URL and album art URL
+res.json({
+    success: true,
+    title: title,
+    artist: artist,
+    album: album,
+    lyrics: lyrics,
+    albumArtUrl: metadata.album ? metadata.album.cover_image : '', // Album Art URL
+    previewUrl: metadata.preview_url || '' // Preview URL for the music player
+});
+
+
                     } else {
                         res.json({ success: false, title: data.metadata.music[0]?.title || null, artist: data.metadata.music[0]?.artists[0]?.name || null });
                     }
@@ -105,69 +117,6 @@ app.post('/upload', upload.single('musicFile'), async (req, res) => {
             .run();
     } else {
         res.status(400).json({ success: false, error: 'No file uploaded' });
-    }
-});
-
-// Live Listening in Device
-app.post('/liveDevice', async (req, res) => {
-    try {
-        console.log('Attempting to capture system audio...');
-        const stream = await navigator.mediaDevices.getDisplayMedia({
-            video: false,
-            audio: true
-        });
-
-        if (stream) {
-            console.log('System audio stream captured successfully.');
-            const mediaRecorder = new MediaRecorder(stream);
-            let audioChunks = [];
-
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    audioChunks.push(event.data);
-                }
-            };
-
-            mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                const formData = new FormData();
-                formData.append('musicFile', audioBlob, 'systemAudio.wav');
-
-                fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        res.json({
-                            title: result.title,
-                            artist: result.artist,
-                            album: result.album,
-                            lyrics: result.lyrics,
-                        });
-                    } else {
-                        res.json({ error: 'Unable to identify the song' });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-            };
-
-            // Start recording after obtaining the stream
-            mediaRecorder.start();
-            setTimeout(() => {
-                mediaRecorder.stop();
-            }, 20000); // Stop recording after 20 seconds
-
-        } else {
-            console.error('Failed to obtain audio stream.');
-            res.status(500).json({ error: 'Unable to capture system audio. Make sure to allow permissions and select a screen with audio.' });
-        }
-    } catch (err) {
-        console.error('Error capturing system audio:', err);
-        res.status(500).json({ error: 'Unable to capture system audio. Make sure to allow permissions and select a screen with audio.' });
     }
 });
 

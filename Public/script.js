@@ -1,262 +1,285 @@
-// Helper function to handle response from music recognition API
-function handleRecognitionResult(result, outputElementId) {
-    const outputElement = document.getElementById(outputElementId);
-    if (result.success) {
-        outputElement.innerHTML = `
-            <h3>Song Information</h3>
-            <p><strong>Title:</strong> ${result.title}</p>
-            <p><strong>Artist:</strong> ${result.artist}</p>
-            <p><strong>Album:</strong> ${result.album}</p>
-            <h3>Lyrics</h3>
-            <p>${result.lyrics}</p>
-        `;
-        
-        // Update the music player with the identified song information
-        updateMusicPlayer(result);
-    } else {
-        outputElement.innerHTML = `
-            <h3>Song Information</h3>
-            <p><strong>Title:</strong> ${result.title || 'Unknown'}</p>
-            <p><strong>Artist:</strong> ${result.artist || 'Unknown'}</p>
-            <p><strong>Album:</strong> ${result.album || 'Unknown'}</p>
-            <h3>Lyrics</h3>
-            <p>Lyrics not available</p>
-        `;
-    }
-}
+document.addEventListener('DOMContentLoaded', function () {
+    // Selectors for different buttons and elements
+    const audioPlayer = document.getElementById('audioPlayer');
+    const sphereButton = document.querySelector('.sphere-button');
+    const stopListeningDeviceButton = document.getElementById('stopListeningDevice');
+    const startListeningMicButton = document.getElementById('startListeningMic');
+    const stopListeningMicButton = document.getElementById('stopListeningMic');
+    const identifyButton = document.getElementById('identifyButton');
+    
+    let mediaRecorder;
+    let mediaRecorderMic;
+    let micTimeout;
 
-// Function to update the music player UI
-function updateMusicPlayer(result) {
-    document.getElementById('songTitle').innerText = result.title || 'Unknown Title';
-    document.getElementById('songArtist').innerText = result.artist || 'Unknown Artist';
-    document.getElementById('albumArt').src = result.albumArtUrl || 'default_album_art.jpg';
-    document.getElementById('audioSource').src = result.previewUrl || '';
-    document.getElementById('audioPlayer').load();
-    document.getElementById('musicPlayer').classList.remove('hidden');
-}
+    // Function to search for the music video using YouTube API
+    async function getMusicVideoUrl(title, artist) {
+        const apiKey = '[GOOGLE_YOUTUBE_LEAKED]'; // Your YouTube API key
+        const query = `${title} ${artist} official music video`;
+        const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&videoEmbeddable=true&key=${apiKey}`;
 
-// Helper function to upload audio for recognition
-function uploadAudio(audioBlob, outputElementId) {
-    const formData = new FormData();
-    formData.append('musicFile', audioBlob);
-
-    fetch('/upload', {
-        method: 'POST',
-        body: formData
-    })
-        .then(response => response.json())
-        .then(result => handleRecognitionResult(result, outputElementId))
-        .catch(error => {
-            console.error('Error:', error);
-        });
-}
-
-// File upload for music recognition
-document.getElementById('identifyButton').addEventListener('click', () => {
-    const musicInput = document.getElementById('musicInput').files[0];
-    if (musicInput) {
-        uploadAudio(musicInput, 'result');
-    } else {
-        alert('Please select a music file first.');
-    }
-});
-
-// Live listening helper function
-function startLiveListening(outputElementId, streamType) {
-    const mediaFunction = streamType === 'getDisplayMedia' ? navigator.mediaDevices.getDisplayMedia : navigator.mediaDevices.getUserMedia;
-
-    mediaFunction({ video: false, audio: true })
-        .then(stream => {
-            const mediaRecorder = new MediaRecorder(stream);
-            let audioChunks = [];
-
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    audioChunks.push(event.data);
-                }
-            };
-
-            mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                uploadAudio(audioBlob, outputElementId);
-            };
-
-            mediaRecorder.start();
-            setTimeout(() => mediaRecorder.stop(), 20000); // Stop recording after 20 seconds
-
-            // Enable/Disable buttons
-            document.getElementById(`stopListening${streamType}`).disabled = false;
-            document.getElementById(`startListening${streamType}`).disabled = true;
-        })
-        .catch(err => {
-            if (err.name === 'NotAllowedError') {
-                alert(`Permission denied. Please allow permissions to access ${streamType === 'getDisplayMedia' ? 'screen' : 'microphone'} audio.`);
-            } else if (err.name === 'NotFoundError') {
-                alert(`No audio input found. Please check your device's audio settings.`);
-            } else {
-                console.error(`Error accessing ${streamType}:`, err);
-                alert(`Unable to access the ${streamType}. Make sure to allow permissions.`);
+        try {
+            const response = await fetch(searchUrl);
+            const data = await response.json();
+            if (data.items && data.items.length > 0) {
+                const videoId = data.items[0].id.videoId;
+                return `https://www.youtube.com/embed/${videoId}`;
             }
-        });
-}
-
-// Live Listening for Device
-document.getElementById('startListeningDevice').addEventListener('click', () => {
-    startLiveListening('liveResultDevice', 'getDisplayMedia');
-});
-
-document.getElementById('stopListeningDevice').addEventListener('click', () => {
-    document.getElementById('stopListeningDevice').disabled = true;
-    document.getElementById('startListeningDevice').disabled = false;
-});
-
-// Live Listening for Microphone
-document.getElementById('startListeningMic').addEventListener('click', async () => {
-    try {
-        // Request microphone access
-        const constraints = {
-            audio: {
-                deviceId: 'default', // You can set specific device ID or keep it default
-            }
-        };
-        
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-        if (stream) {
-            const mediaRecorder = new MediaRecorder(stream);
-            let audioChunks = [];
-
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    audioChunks.push(event.data);
-                }
-            };
-
-            mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                const formData = new FormData();
-                formData.append('musicFile', audioBlob, 'microphoneAudio.wav');
-
-                fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        document.getElementById('liveResultMic').innerHTML = `
-                            <h3>Song Information</h3>
-                            <p><strong>Title:</strong> ${result.title}</p>
-                            <p><strong>Artist:</strong> ${result.artist}</p>
-                            <p><strong>Album:</strong> ${result.album}</p>
-                            <h3>Lyrics</h3>
-                            <p>${result.lyrics}</p>
-                        `;
-                    } else {
-                        document.getElementById('liveResultMic').innerHTML = `
-                            <h3>Song Information</h3>
-                            <p><strong>Title:</strong> ${result.title || 'Unknown'}</p>
-                            <p><strong>Artist:</strong> ${result.artist || 'Unknown'}</p>
-                            <p><strong>Album:</strong> ${result.album || 'Unknown'}</p>
-                            <h3>Lyrics</h3>
-                            <p>Lyrics not available</p>
-                        `;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-            };
-
-            // Start recording after obtaining the stream
-            mediaRecorder.start();
-            setTimeout(() => {
-                mediaRecorder.stop();
-            }, 20000); // Stop recording after 20 seconds
-
-            document.getElementById('stopListeningMic').disabled = false;
-            document.getElementById('startListeningMic').disabled = true;
+        } catch (error) {
+            console.error('Error fetching YouTube video:', error);
         }
-    } catch (err) {
-        console.error('Error accessing microphone:', err);
-        if (err.name === 'NotAllowedError') {
-            alert('Permission denied. Please allow microphone access in your browser settings.');
-        } else if (err.name === 'NotFoundError') {
-            alert('No microphone found. Please check your device.');
+
+        // Return an empty string if no video is found
+        return '';
+    }
+
+    // Function to handle song recognition and redirect to result.html
+    async function handleSongRecognition(result) {
+        if (result.success) {
+            const title = result.title;
+            const artist = result.artist;
+            const album = result.album;
+            const lyrics = encodeURIComponent(result.lyrics || 'Lyrics not available');
+
+            // Fetch the music video URL
+            const videoUrl = await getMusicVideoUrl(title, artist);
+
+            // Redirect to the result page with query parameters
+            const redirectUrl = `result.html?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}&lyrics=${lyrics}&videoUrl=${encodeURIComponent(videoUrl)}`;
+            window.location.href = redirectUrl;
         } else {
-            alert('Unable to access the microphone. Make sure to allow permissions.');
+            alert('Unable to recognize the song.');
         }
     }
+
+    // Handle file upload recognition
+    identifyButton.addEventListener('click', function () {
+        const fileInput = document.getElementById('musicInput');
+        const file = fileInput.files[0];
+
+        if (file) {
+            const formData = new FormData();
+            formData.append('musicFile', file);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                handleSongRecognition(result);
+            })
+            .catch(error => {
+                console.error('Upload error:', error);
+            });
+        } else {
+            alert('Please select a music file before identifying.');
+        }
+    });
+
+    // Live Listening through Microphone
+    startListeningMicButton.addEventListener('click', async function () {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+            if (stream) {
+                mediaRecorderMic = new MediaRecorder(stream);
+                let audioChunks = [];
+
+                mediaRecorderMic.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorderMic.onstop = async () => {
+                    clearTimeout(micTimeout); // Clear the timeout if it didn't expire
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const formData = new FormData();
+                    formData.append('musicFile', audioBlob, 'micAudio.wav');
+
+                    fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        handleSongRecognition(result);
+                    })
+                    .catch(error => {
+                        console.error('Microphone upload error:', error);
+                    });
+                };
+
+                // Start recording for a maximum duration of 20 seconds
+                mediaRecorderMic.start();
+                micTimeout = setTimeout(() => {
+                    if (mediaRecorderMic.state === "recording") {
+                        mediaRecorderMic.stop();
+                    }
+                }, 20000);
+
+                startListeningMicButton.disabled = true;
+                stopListeningMicButton.disabled = false;
+            }
+        } catch (err) {
+            console.error('Error capturing microphone audio:', err);
+            alert('Unable to capture microphone audio. Make sure to allow permissions.');
+        }
+    });
+
+    // Stop microphone listening manually
+    stopListeningMicButton.addEventListener('click', () => {
+        if (mediaRecorderMic && mediaRecorderMic.state === "recording") {
+            mediaRecorderMic.stop();
+        }
+        startListeningMicButton.disabled = false;
+        stopListeningMicButton.disabled = true;
+    });
+
+    // Live Listening in Device
+    sphereButton.addEventListener('click', async function (event) {
+        event.preventDefault(); // Prevent default anchor behavior
+    
+        try {
+            // Simplify the constraints to allow broader compatibility
+            const stream = await navigator.mediaDevices.getDisplayMedia({
+                video: true,  // Request video to enable broader access
+                audio: true   // Simplify the audio request to "true" without specifics
+            });
+    
+            if (stream) {
+                mediaRecorder = new MediaRecorder(stream);
+                let audioChunks = [];
+    
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+    
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const formData = new FormData();
+                    formData.append('musicFile', audioBlob, 'systemAudio.wav');
+    
+                    fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        handleSongRecognition(result);
+                    })
+                    .catch(error => {
+                        console.error('Error during upload:', error);
+                    });
+                };
+    
+                // Start recording and stop after 20 seconds
+                mediaRecorder.start();
+                setTimeout(() => {
+                    if (mediaRecorder.state === "recording") {
+                        mediaRecorder.stop();
+                    }
+                }, 20000); // Stop recording after 20 seconds
+    
+                sphereButton.disabled = true;
+                stopListeningDeviceButton.disabled = false;
+            }
+        } catch (err) {
+            console.error('Error capturing system audio:', err);
+            alert('Unable to capture system audio. Make sure to allow permissions and select a screen with audio.');
+        }
+    });
+
+    // Stop listening in the device manually
+    stopListeningDeviceButton.addEventListener('click', () => {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+            mediaRecorder.stop();
+        }
+        sphereButton.disabled = false;
+        stopListeningDeviceButton.disabled = true;
+    });
 });
 
-document.getElementById('stopListeningMic').addEventListener('click', () => {
-    document.getElementById('stopListeningMic').disabled = true;
-    document.getElementById('startListeningMic').disabled = false;
-});
+document.addEventListener('DOMContentLoaded', function () {
+    // Function to handle song recognition and redirect to result.html
+    async function handleSongRecognition(result) {
+        if (result.success) {
+            const title = result.title;
+            const artist = result.artist;
+            const album = result.album;
+            const lyrics = encodeURIComponent(result.lyrics || 'Lyrics not available');
+            const previewUrl = result.previewUrl; // Use the preview URL for the audio player
+            const albumArtUrl = encodeURIComponent(result.albumArtUrl || '');
 
+            // Fetch the music video URL
+            const videoUrl = await getMusicVideoUrl(title, artist);
 
-document.getElementById('stopListeningMic').addEventListener('click', () => {
-    document.getElementById('stopListeningMic').disabled = true;
-    document.getElementById('startListeningMic').disabled = false;
-});
+            // Redirect to the result page with query parameters
+            const redirectUrl = `result.html?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}&lyrics=${lyrics}&videoUrl=${encodeURIComponent(videoUrl)}&albumArtUrl=${albumArtUrl}&previewUrl=${encodeURIComponent(previewUrl)}`;
+            window.location.href = redirectUrl;
+        } else {
+            alert('Unable to recognize the song.');
+        }
+    }
 
-// Audio Player Script for Syncing Time and Controls
-const audioPlayer = document.getElementById('audioPlayer');
-const playPauseButton = document.getElementById('playPauseButton');
-const prevButton = document.getElementById('prevButton');
-const nextButton = document.getElementById('nextButton');
-const seekBar = document.getElementById('seek-bar');
-const currentTimeElement = document.getElementById('currentTime');
-const durationElement = document.getElementById('duration');
-const muteButton = document.getElementById('muteButton');
-const volumeBar = document.getElementById('volume-bar');
+    // Function to format time in mm:ss
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+    }
 
-// Update seek bar and duration
-audioPlayer.addEventListener('loadedmetadata', () => {
-    seekBar.max = Math.floor(audioPlayer.duration);
-    durationElement.textContent = formatTime(audioPlayer.duration);
-});
+    // Initialize audio player elements
+    const audioPlayer = document.getElementById('audioPlayer');
+    const playPauseButton = document.getElementById('playPauseButton');
+    const progressBar = document.getElementById('progressBar');
+    const currentTimeElement = document.getElementById('currentTime');
+    const totalTimeElement = document.getElementById('totalTime');
+    const volumeSlider = document.getElementById('volumeSlider');
 
-audioPlayer.addEventListener('timeupdate', () => {
-    seekBar.value = Math.floor(audioPlayer.currentTime);
-    currentTimeElement.textContent = formatTime(audioPlayer.currentTime);
-});
+    // Load song information from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const previewUrl = urlParams.get('previewUrl');
 
-playPauseButton.addEventListener('click', () => {
-    if (audioPlayer.paused) {
-        audioPlayer.play();
-        playPauseButton.textContent = '⏸️';
+    if (previewUrl) {
+        audioPlayer.src = decodeURIComponent(previewUrl);
+
+        // Setup event listeners for playback controls
+        playPauseButton.addEventListener('click', () => {
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+                playPauseButton.innerHTML = '&#10074;&#10074;'; // Pause icon
+            } else {
+                audioPlayer.pause();
+                playPauseButton.innerHTML = '&#9654;'; // Play icon
+            }
+        });
+
+        // Update progress bar as song plays
+        audioPlayer.addEventListener('timeupdate', () => {
+            const currentTime = audioPlayer.currentTime;
+            const duration = audioPlayer.duration;
+            progressBar.value = (currentTime / duration) * 100;
+            currentTimeElement.textContent = formatTime(currentTime);
+            totalTimeElement.textContent = formatTime(duration);
+        });
+
+        // Seek to a specific point in the song
+        progressBar.addEventListener('input', () => {
+            const duration = audioPlayer.duration;
+            audioPlayer.currentTime = (progressBar.value / 100) * duration;
+        });
+
+        // Volume control
+        volumeSlider.addEventListener('input', () => {
+            audioPlayer.volume = volumeSlider.value / 100;
+        });
     } else {
-        audioPlayer.pause();
-        playPauseButton.textContent = '⏯️';
+        // Disable player if no preview is available
+        playPauseButton.disabled = true;
+        progressBar.disabled = true;
+        volumeSlider.disabled = true;
     }
 });
-
-prevButton.addEventListener('click', () => {
-    // Handle previous button functionality (currently restarts the track)
-    audioPlayer.currentTime = 0;
-});
-
-nextButton.addEventListener('click', () => {
-    // Handle next button functionality (currently skips to end of the track)
-    audioPlayer.currentTime = audioPlayer.duration;
-});
-
-seekBar.addEventListener('input', () => {
-    audioPlayer.currentTime = seekBar.value;
-});
-
-muteButton.addEventListener('click', () => {
-    audioPlayer.muted = !audioPlayer.muted;
-    muteButton.textContent = audioPlayer.muted ? '🔈' : '🔇';
-});
-
-volumeBar.addEventListener('input', () => {
-    audioPlayer.volume = volumeBar.value;
-});
-
-function formatTime(seconds) {
-    const minutes = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
-}
