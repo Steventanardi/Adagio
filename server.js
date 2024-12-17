@@ -22,11 +22,11 @@ const acr = new AcrCloud({
 });
 
 // Set up AudD 
-const AUDD_API_KEY = '[AUDD_LEAKED]';
+const AUDD_API_KEY = process.env.AUDD_API_KEY;
 
 // Spotify API credentials
-const SPOTIFY_CLIENT_ID = '[SPOTIFY_ID_LEAKED]';
-const SPOTIFY_CLIENT_SECRET = '[SPOTIFY_SECRET_LEAKED]';
+const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 
 // Genius API setup
 const GENIUS_API_KEY = 'gJSMSZpK06fIm8g-pjIoDieHcWL85vzqcGf6P2EAiEdDjDBrSGuwaHkJf0t20aDK';
@@ -83,15 +83,16 @@ async function fetchYouTubeVideoUrl(artist, title) {
 
 // Lyrics Retrieval Function with Scraping
 async function fetchLyrics(artist, title) {
-    // First, try to fetch lyrics from lyrics.ovh
     try {
         const lyricsOvhResponse = await axios.get(`https://api.lyrics.ovh/v1/${artist}/${title}`);
         if (lyricsOvhResponse.data.lyrics) {
-            // Format lyrics to maintain line breaks
             return lyricsOvhResponse.data.lyrics.replace(/\n{2,}/g, '\n\n');
+        } else {
+            console.error('No lyrics found:', lyricsOvhResponse.data);
+            return 'Lyrics not available';
         }
     } catch (err) {
-        console.error('lyrics.ovh API error:', err);
+        console.error('lyrics.ovh API error:', err.response ? err.response.data : err.message);
     }
 
     // If lyrics.ovh fails, fall back to Genius
@@ -100,7 +101,7 @@ async function fetchLyrics(artist, title) {
         const geniusResponse = await axios.get(searchUrl, {
             headers: { Authorization: `Bearer ${GENIUS_API_KEY}` }
         });
-        
+
         if (geniusResponse.data.response.hits.length > 0) {
             const songPath = geniusResponse.data.response.hits[0].result.path;
             const songUrl = `https://genius.com${songPath}`;
@@ -111,7 +112,6 @@ async function fetchLyrics(artist, title) {
             let lyrics = $('.lyrics').text().trim() || $('[data-lyrics-container]').text().trim();
 
             if (lyrics) {
-                // Format lyrics to maintain line breaks
                 lyrics = lyrics.replace(/\n{2,}/g, '\n\n');
                 return lyrics;
             }
@@ -120,53 +120,38 @@ async function fetchLyrics(artist, title) {
         console.error('Genius API or scraping error:', err);
     }
 
-    // If both services fail
     return 'Lyrics not found';
 }
+
 
 // Serve static files
 app.use(express.static('public'));
 
 // Attempt to recognize a song with AudD first, then fall back to AcrCloud if needed
 async function identifySong(filePath) {
-    // First, try AudD
     try {
         const formData = new FormData();
         formData.append('api_token', AUDD_API_KEY);
         formData.append('file', fs.createReadStream(filePath));
 
         const auddResponse = await axios.post('https://api.audd.io/', formData, {
-            headers: formData.getHeaders() // Use the headers from `form-data` library
+            headers: formData.getHeaders(),
         });
 
-        if (auddResponse.data.status === 'success') {
+        if (auddResponse.data && auddResponse.data.result) {
             return {
                 success: true,
                 service: 'AudD',
-                metadata: auddResponse.data.result
+                metadata: auddResponse.data.result,
             };
         }
     } catch (error) {
         console.error('AudD error:', error);
     }
-
-    // If AudD fails, try AcrCloud
-    try {
-        const acrResult = await acr.identify(fs.readFileSync(filePath));
-        if (acrResult.status && acrResult.status.msg === 'Success') {
-            return {
-                success: true,
-                service: 'AcrCloud',
-                metadata: acrResult.metadata.music[0]
-            };
-        }
-    } catch (error) {
-        console.error('AcrCloud error:', error);
-    }
-
-    // If both services fail
-    return { success: false };
+    return { success: false, message: 'AudD API error' };
 }
+
+
 
 // File upload and song recognition
 app.post('/upload', upload.single('musicFile'), async (req, res) => {
@@ -189,9 +174,10 @@ app.post('/upload', upload.single('musicFile'), async (req, res) => {
                     const album = metadata.album || 'Unknown';
                     const genre = metadata.genres ? metadata.genres[0].name : 'Unknown';
 
-                    /// Fetch lyrics and YouTube video URL
+// Fetch lyrics and YouTube video URL
 const lyrics = await fetchLyrics(artist, title);
 const videoUrl = await fetchYouTubeVideoUrl(artist, title);
+const similarSongs = await fetchRecommendedSongs(artist, title);
 
 console.log("YouTube Video URL:", videoUrl); // Log the video URL for debugging
 
@@ -203,6 +189,7 @@ res.json({
     genre,
     lyrics,
     videoUrl, // Add YouTube video URL to response
+    similarSongs,
 });
 
                 } else {
@@ -302,7 +289,7 @@ app.post('/upload', upload.single('musicFile'), async (req, res) => {
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '1234',
+    password: '',
     database: 'adagio'
 });
 

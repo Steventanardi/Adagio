@@ -106,6 +106,7 @@ async function handleSongRecognition(result) {
         );
         
         return response.data.access_token;
+        
     }
     
 
