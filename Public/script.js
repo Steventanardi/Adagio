@@ -33,25 +33,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Function to handle song recognition and redirect to result.html
     // Updated function to handle song recognition and video URL retrieval
-async function handleSongRecognition(result) {
-    if (result.success) {
-        const title = result.title;
-        const artist = result.artist;
-        const album = result.album;
-        const genre = result.genre;
-        const lyrics = encodeURIComponent(result.lyrics || 'Lyrics not available');
-
-        // Retrieve the music video URL
-        const videoUrl = await getMusicVideoUrl(title, artist);
-
-        // Redirect to result.html with metadata and video URL
-        const redirectUrl = `result.html?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}&album=${encodeURIComponent(album)}&genre=${encodeURIComponent(genre)}&lyrics=${lyrics}&videoUrl=${encodeURIComponent(videoUrl)}`;
-        window.location.href = redirectUrl;
-    } else {
-        alert('Unable to recognize the song.');
+    async function handleSongRecognition(result) {
+        if (result.success) {
+            const redirectUrl = `result.html?title=${encodeURIComponent(result.title)}&artist=${encodeURIComponent(result.artist)}&lyrics=${encodeURIComponent(result.lyrics)}&videoUrl=${encodeURIComponent(result.videoUrl)}&spotifyLink=${encodeURIComponent(result.spotifyLink)}&playlists=${encodeURIComponent(JSON.stringify(result.playlists))}&similarSongs=${encodeURIComponent(JSON.stringify(result.similarSongs))}`;
+            window.location.href = redirectUrl;
+        } else {
+            alert('Unable to recognize the song.');
+        }
     }
-}
-
 
     /// Function to show the sound wave animation and hide floating spheres
     function activateSoundWave() {
@@ -63,6 +52,35 @@ async function handleSongRecognition(result) {
             sphere.style.display = 'none';
         });
     }
+
+    document.getElementById('intelligentSearchButton').addEventListener('click', intelligentMusicSearch);
+
+
+    async function intelligentMusicSearch() {
+        const userQuery = prompt("Enter your music query: (e.g., Recommend a jazz song, find a similar track, etc.)");
+    
+        if (userQuery) {
+            try {
+                const response = await fetch('/intelligent-search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: userQuery })
+                });
+    
+                const result = await response.json();
+                if (result.success) {
+                    alert(`ChatGPT Response: ${result.response}`);
+                } else {
+                    alert('Failed to fetch recommendations. Try again!');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error fetching intelligent search results.');
+            }
+        }
+    }
+    
+    
 
     // Event Listener for Identify Button
     identifyButton.addEventListener('click', function () {
@@ -113,52 +131,48 @@ async function handleSongRecognition(result) {
     // Event Listener for Start Listening through Microphone Button
     startListeningMicButton.addEventListener('click', async function () {
         activateSoundWave();
-
+    
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-            if (stream) {
-                const mediaRecorder = new MediaRecorder(stream);
-                let audioChunks = [];
-
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) {
-                        audioChunks.push(event.data);
-                    }
-                };
-
-                mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    const formData = new FormData();
-                    formData.append('musicFile', audioBlob, 'micAudio.wav');
-
-                    fetch('/upload', {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(result => {
-                        handleSongRecognition(result); // Process song recognition
-                    })
-                    .catch(error => {
-                        console.error('Microphone upload error:', error);
-                    });
-                };
-
-                mediaRecorder.start();
-                setTimeout(() => {
-                    if (mediaRecorder.state === "recording") {
-                        mediaRecorder.stop();
-                    }
-                }, 20000);
-
-                startListeningMicButton.disabled = true;
-            }
+            const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            const audioChunks = [];
+    
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunks.push(event.data);
+                }
+            };
+    
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const formData = new FormData();
+                formData.append('musicFile', audioBlob, 'micAudio.webm');
+    
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(result => {
+                    handleSongRecognition(result);
+                })
+                .catch(error => console.error('Error uploading microphone audio:', error));
+            };
+    
+            mediaRecorder.start();
+            setTimeout(() => {
+                if (mediaRecorder.state === "recording") {
+                    mediaRecorder.stop();
+                }
+            }, 10000); // Record for 10 seconds
+    
+            startListeningMicButton.disabled = true;
         } catch (err) {
-            console.error('Error capturing microphone audio:', err);
-            alert('Unable to capture microphone audio. Make sure to allow permissions.');
+            console.error('Microphone access error:', err);
+            alert('Please allow microphone permissions.');
         }
     });
+    
 
 
     stopListeningMicButton.addEventListener('click', () => {

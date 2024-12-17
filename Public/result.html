@@ -31,80 +31,99 @@
             <p><strong>Title:</strong> <span id="songTitle"></span></p>
             <p><strong>Artist:</strong> <span id="songArtist"></span></p>
             <p><strong>Album:</strong> <span id="songAlbum"></span></p>
-            <p><strong>Genre:</strong> <span id="songGenre"></span></p> <!-- New line for Genre -->
+            <p><strong>Genre:</strong> <span id="songGenre"></span></p>
         </div>
 
         <div class="video-player" id="videoPlayerContainer">
             <h2>Music Video</h2>
-            <iframe
-                id="videoPlayer"
-                width="560"
-                height="315"
-                frameborder="0"
-                allow="autoplay; encrypted-media"
-                allowfullscreen
-                src=""
-            ></iframe>
+            <iframe id="videoPlayer" width="560" height="315" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+
+        <div class="similar-songs">
+            <h2>Similar Songs</h2>
+            <ul id="similarSongsList"></ul>
+        </div>
+
+        <div class="streaming-links">
+            <h2>Listen on:</h2>
+            <a id="spotifyLink" href="#" target="_blank">Spotify</a>
+        </div>
+
+        <div class="playlist-suggestions">
+            <h2>Suggested Playlists</h2>
+            <ul id="playlistList"></ul>
         </div>
 
         <div class="lyrics-section">
             <h2>Lyrics</h2>
-            <pre id="songLyrics" class="song-lyrics" style="white-space: pre-wrap;"></pre>
+            <pre id="songLyrics" class="song-lyrics"></pre>
+
+            
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const urlParams = new URLSearchParams(window.location.search);
-            const title = urlParams.get('title');
-            const artist = urlParams.get('artist');
-            const album = urlParams.get('album');
-            const genre = urlParams.get('genre');
-            const lyrics = urlParams.get('lyrics');
-            const videoUrl = urlParams.get('videoUrl'); // Get the YouTube video URL
-    
+        
+            // Extract parameters
+            const title = urlParams.get('title') || 'Unknown Title';
+            const artist = urlParams.get('artist') || 'Unknown Artist';
+            const lyrics = decodeURIComponent(urlParams.get('lyrics') || 'Lyrics not available');
+            const videoUrl = urlParams.get('videoUrl') || '';
+            const spotifyLink = urlParams.get('spotifyLink') || '';
+            const playlists = JSON.parse(decodeURIComponent(urlParams.get('playlists') || '[]'));
+            const similarSongs = JSON.parse(decodeURIComponent(urlParams.get('similarSongs') || '[]'));
+        
+            // Set song info
             document.getElementById('songTitle').textContent = title;
             document.getElementById('songArtist').textContent = artist;
-            document.getElementById('songAlbum').textContent = album;
-            document.getElementById('songGenre').textContent = genre;
-            document.getElementById('songLyrics').textContent = decodeURIComponent(lyrics);
-    
-            console.log("Embed YouTube Video URL:", videoUrl); // Log video URL in browser console
-    
-            if (videoUrl) {
-                document.getElementById('videoPlayer').src = videoUrl;
-                document.getElementById('videoPlayerContainer').style.display = 'block';
+            document.getElementById('songLyrics').textContent = lyrics;
+        
+            // Display video
+            const videoPlayer = document.getElementById('videoPlayer');
+            videoPlayer.src = videoUrl || '';
+        
+            // Display Spotify link
+            const spotifyLinkElement = document.getElementById('spotifyLink');
+            if (spotifyLink) {
+                spotifyLinkElement.href = spotifyLink;
+                spotifyLinkElement.textContent = 'Listen on Spotify';
             } else {
-                document.getElementById('videoPlayerContainer').innerHTML = '<p>Music video not available.</p>';
+                spotifyLinkElement.style.display = 'none';
             }
-        });
-    </script>
+        
+            // Display similar songs
+            const similarSongsList = document.getElementById('similarSongsList');
+            similarSongs.forEach(song => {
+                const li = document.createElement('li');
+                li.textContent = `${song.title} by ${song.artist}`;
+                similarSongsList.appendChild(li);
+            });
+        
+            // Display playlists
+            const playlistList = document.getElementById('playlistList');
+            playlists.forEach(playlist => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = playlist.url;
+                a.target = '_blank';
+                a.textContent = playlist.name;
+                li.appendChild(a);
+                playlistList.appendChild(li);
+            });
 
-    <script>
-        // Load song information from URL parameters
-        document.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const title = urlParams.get('title');
-            const artist = urlParams.get('artist');
-            const album = urlParams.get('album');
-            const genre = urlParams.get('genre'); // Retrieve genre from URL parameters
-            const lyrics = urlParams.get('lyrics');
-            const videoUrl = urlParams.get('videoUrl');
-        
-            document.getElementById('songTitle').textContent = title;
-            document.getElementById('songArtist').textContent = artist;
-            document.getElementById('songAlbum').textContent = album;
-            document.getElementById('songGenre').textContent = genre; // Display the genre
-            document.getElementById('songLyrics').textContent = decodeURIComponent(lyrics);
-        
-            if (videoUrl && videoUrl !== '') {
-                const videoPlayer = document.getElementById('videoPlayer');
-                videoPlayer.innerHTML = `<iframe width="560" height="315" src="${videoUrl}" frameborder="0" allowfullscreen></iframe>`;
-            } else {
-                const videoPlayer = document.getElementById('videoPlayer');
-                videoPlayer.innerHTML = '<p>Music video not available.</p>';
-            }
+            console.log("Title:", title);
+console.log("Artist:", artist);
+console.log("Video URL:", videoUrl);
+console.log("Spotify Link:", spotifyLink);
+console.log("Similar Songs:", similarSongs);
+console.log("Playlists:", playlists);
+
         });
+        
+    
+
         function redirectToHome() {
             window.location.href = 'index.html';
         }

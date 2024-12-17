@@ -8,6 +8,9 @@ const ffmpeg = require('fluent-ffmpeg');
 const mysql = require('mysql');
 const FormData = require('form-data');
 const cheerio = require('cheerio');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { OpenAI } = require('openai');
 require('dotenv').config();
 
 const app = express();
@@ -16,23 +19,45 @@ const JWT_SECRET = 'your_jwt_secret_key';
 
 // Set up AcrCloud config
 const acr = new AcrCloud({
-    host: 'identify-ap-southeast-1.acrcloud.com', 
+    host: 'identify-ap-southeast-1.acrcloud.com',
     access_key: '[ACR_KEY_LEAKED]',
     access_secret: '[ACR_SECRET_LEAKED]'
 });
 
-// Set up AudD 
-const AUDD_API_KEY = process.env.AUDD_API_KEY;
+// Set up AudD API Key
+const AUDD_API_KEY = '[AUDD_LEAKED]';
 
 // Spotify API credentials
-const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
-const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
+const SPOTIFY_CLIENT_ID = '[SPOTIFY_ID_LEAKED]';
+const SPOTIFY_CLIENT_SECRET = '[SPOTIFY_SECRET_LEAKED]';
 
 // Genius API setup
 const GENIUS_API_KEY = 'gJSMSZpK06fIm8g-pjIoDieHcWL85vzqcGf6P2EAiEdDjDBrSGuwaHkJf0t20aDK';
 
 // YouTube API Key
 const YOUTUBE_API_KEY = '[GOOGLE_YOUTUBE_LEAKED]';
+
+// Middleware
+app.use(express.json());
+app.use(express.static('public'));
+
+// Initialize OpenAI API
+const openai = new OpenAI({
+    apiKey: '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', 
+});
+
+// MySQL Database Connection
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'adagio'
+});
+
+db.connect((err) => {
+    if (err) throw err;
+    console.log('Connected to MySQL Database');
+});
 
 // Set up multer for file uploads
 const storage = multer.diskStorage({
@@ -58,14 +83,16 @@ async function getSpotifyAccessToken() {
     return response.data.access_token;
 }
 
-// Function to search for a song on YouTube and get a video URL
+// Function to fetch YouTube Video URL
 async function fetchYouTubeVideoUrl(artist, title) {
     try {
+        const query = `${artist} ${title} official music video`;
         const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
             params: {
                 part: 'snippet',
-                q: `${artist} ${title}`,
+                q: query,
                 type: 'video',
+                videoEmbeddable: true,
                 maxResults: 1,
                 key: YOUTUBE_API_KEY,
             },
@@ -73,61 +100,16 @@ async function fetchYouTubeVideoUrl(artist, title) {
 
         if (response.data.items.length > 0) {
             const videoId = response.data.items[0].id.videoId;
-            return `https://www.youtube.com/embed/${videoId}`; // Embed URL
+            return `https://www.youtube.com/embed/${videoId}`;
         }
     } catch (error) {
-        console.error('YouTube API error:', error);
+        console.error('YouTube API error:', error.message);
     }
-    return null; // Return null if no video is found
-}
-
-// Lyrics Retrieval Function with Scraping
-async function fetchLyrics(artist, title) {
-    try {
-        const lyricsOvhResponse = await axios.get(`https://api.lyrics.ovh/v1/${artist}/${title}`);
-        if (lyricsOvhResponse.data.lyrics) {
-            return lyricsOvhResponse.data.lyrics.replace(/\n{2,}/g, '\n\n');
-        } else {
-            console.error('No lyrics found:', lyricsOvhResponse.data);
-            return 'Lyrics not available';
-        }
-    } catch (err) {
-        console.error('lyrics.ovh API error:', err.response ? err.response.data : err.message);
-    }
-
-    // If lyrics.ovh fails, fall back to Genius
-    try {
-        const searchUrl = `https://api.genius.com/search?q=${encodeURIComponent(artist + ' ' + title)}`;
-        const geniusResponse = await axios.get(searchUrl, {
-            headers: { Authorization: `Bearer ${GENIUS_API_KEY}` }
-        });
-
-        if (geniusResponse.data.response.hits.length > 0) {
-            const songPath = geniusResponse.data.response.hits[0].result.path;
-            const songUrl = `https://genius.com${songPath}`;
-
-            // Scrape the lyrics from the song page
-            const pageResponse = await axios.get(songUrl);
-            const $ = cheerio.load(pageResponse.data);
-            let lyrics = $('.lyrics').text().trim() || $('[data-lyrics-container]').text().trim();
-
-            if (lyrics) {
-                lyrics = lyrics.replace(/\n{2,}/g, '\n\n');
-                return lyrics;
-            }
-        }
-    } catch (err) {
-        console.error('Genius API or scraping error:', err);
-    }
-
-    return 'Lyrics not found';
+    return ''; // Return an empty string if no video is found
 }
 
 
-// Serve static files
-app.use(express.static('public'));
-
-// Attempt to recognize a song with AudD first, then fall back to AcrCloud if needed
+// Function to identify song via AudD
 async function identifySong(filePath) {
     try {
         const formData = new FormData();
@@ -138,6 +120,7 @@ async function identifySong(filePath) {
             headers: formData.getHeaders(),
         });
 
+        console.log("AudD Response:", auddResponse.data); // Log API response
         if (auddResponse.data && auddResponse.data.result) {
             return {
                 success: true,
@@ -148,199 +131,240 @@ async function identifySong(filePath) {
     } catch (error) {
         console.error('AudD error:', error);
     }
-    return { success: false, message: 'AudD API error' };
+    return { success: false, message: 'Unable to identify the song.' };
 }
-
 
 
 // File upload and song recognition
 app.post('/upload', upload.single('musicFile'), async (req, res) => {
     if (req.file) {
         const filePath = req.file.path;
-
-        // Trim audio to 20 seconds
+        const normalizedPath = filePath.replace(/\\/g, '/'); // Normalize Windows path
         const trimmedPath = `uploads/trimmed-${Date.now()}.mp3`;
-        ffmpeg(filePath)
+
+        ffmpeg(normalizedPath) // Use normalizedPath here
             .setStartTime(0)
-            .setDuration(20)
+            .setDuration(5)
             .output(trimmedPath)
             .on('end', async () => {
+                console.log('Audio trimmed successfully.');
                 const result = await identifySong(trimmedPath);
 
                 if (result.success) {
                     const metadata = result.metadata;
                     const title = metadata.title;
-                    const artist = metadata.artists ? metadata.artists[0].name : metadata.artist;
-                    const album = metadata.album || 'Unknown';
-                    const genre = metadata.genres ? metadata.genres[0].name : 'Unknown';
-
-// Fetch lyrics and YouTube video URL
-const lyrics = await fetchLyrics(artist, title);
-const videoUrl = await fetchYouTubeVideoUrl(artist, title);
-const similarSongs = await fetchRecommendedSongs(artist, title);
-
-console.log("YouTube Video URL:", videoUrl); // Log the video URL for debugging
-
-res.json({
-    success: true,
-    title,
-    artist,
-    album,
-    genre,
-    lyrics,
-    videoUrl, // Add YouTube video URL to response
-    similarSongs,
-});
-
-                } else {
-                    res.json({ success: false, message: 'Song could not be identified.' });
-                }
-
-                fs.unlink(trimmedPath, (err) => {
-                    if (err) console.error('Error removing trimmed file:', err);
-                });
-            })
-            .on('error', (err) => {
-                console.error('Error trimming audio:', err);
-                res.status(500).json({ success: false, error: 'Error processing the audio file' });
-            })
-            .run();
-    } else {
-        res.status(400).json({ success: false, error: 'No file uploaded' });
-    }
-});
-
-// Function to fetch recommended songs from Spotify
-async function fetchRecommendedSongs(artist, title) {
-    try {
-        const token = await getSpotifyAccessToken();
-        
-        // Search for the track on Spotify
-        const searchResponse = await axios.get(`https://api.spotify.com/v1/search`, {
-            headers: { Authorization: `Bearer ${token}` },
-            params: { q: `track:${title} artist:${artist}`, type: 'track', limit: 1 },
-        });
-
-        if (searchResponse.data.tracks.items.length > 0) {
-            const trackId = searchResponse.data.tracks.items[0].id;
-            console.log("Track ID:", trackId); // Log the track ID for debugging
-
-            // Get recommendations based on the track ID
-            const recommendationResponse = await axios.get(`https://api.spotify.com/v1/recommendations`, {
-                headers: { Authorization: `Bearer ${token}` },
-                params: { seed_tracks: trackId, limit: 5 },
-            });
-
-            const similarSongs = recommendationResponse.data.tracks.map(track => ({
-                title: track.name,
-                artist: track.artists[0].name,
-                previewUrl: track.preview_url, // 30-second preview, if available
-            }));
-            console.log("Similar Songs:", similarSongs); // Log similar songs for debugging
-
-            return similarSongs;
-        } else {
-            console.log("No track found for:", title, artist);
-        }
-    } catch (error) {
-        console.error('Spotify API error:', error);
-    }
-    return [];
-}
-
-
-// Update song identification route to include similar songs
-app.post('/upload', upload.single('musicFile'), async (req, res) => {
-    if (req.file) {
-        const filePath = req.file.path;
-
-        ffmpeg(filePath)
-            .setStartTime(0)
-            .setDuration(20)
-            .output(`uploads/trimmed-${Date.now()}.mp3`)
-            .on('end', async () => {
-                const result = await identifySong(trimmedPath);
-
-                if (result.success) {
-                    const metadata = result.metadata;
-                    const title = metadata.title;
-                    const artist = metadata.artists ? metadata.artists[0].name : metadata.artist;
-
-                    // Fetch similar songs
-                    const similarSongs = await fetchRecommendedSongs(artist, title);
+                    const artist = metadata.artist || 'Unknown Artist';
+                    const lyrics = await fetchLyrics(artist, title);
+                    const videoUrl = await fetchYouTubeVideoUrl(artist, title);
 
                     res.json({
                         success: true,
                         title,
                         artist,
-                        similarSongs, // Add similar songs to response
+                        lyrics,
+                        videoUrl,
                     });
                 } else {
-                    res.json({ success: false, message: 'Song could not be identified.' });
+                    res.json({ success: false, message: 'Unable to recognize the song.' });
                 }
+
+                fs.unlink(trimmedPath, () => {}); // Cleanup temporary files
+            })
+            .on('error', (err) => {
+                console.error('Error trimming audio:', err.message);
+                res.status(500).json({ success: false, error: 'Error processing the audio file' });
             })
             .run();
     } else {
-        res.status(400).json({ success: false, error: 'No file uploaded' });
+        res.status(400).json({ success: false, message: 'No file uploaded.' });
     }
 });
 
-// MySQL Database Connection
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'adagio'
+app.post('/intelligent-search', async (req, res) => {
+    const { query } = req.body; // User's music-related query
+
+    if (!query) {
+        return res.status(400).json({ success: false, message: 'Query cannot be empty' });
+    }
+
+    try {
+        const chatResponse = await openai.chat.completions.create({
+            model: 'gpt-4o-mini-2024-07-18', // Use GPT-4 or 'gpt-3.5-turbo'
+            messages: [
+                { role: 'system', content: 'You are a music expert who recommends and searches for music intelligently.' },
+                { role: 'user', content: query }
+            ],
+            max_tokens: 300,
+        });
+
+        const responseMessage = chatResponse.choices[0].message.content;
+
+        res.json({ success: true, response: responseMessage });
+    } catch (error) {
+        console.error('OpenAI API error:', error);
+        res.status(500).json({ success: false, message: 'Failed to process query' });
+    }
 });
 
-db.connect((err) => {
-    if (err) throw err;
-    console.log('Connected to MySQL Database');
+
+// Function to fetch streaming links and suggested playlists
+async function fetchSpotifyDetails(artist, title) {
+    const token = await getSpotifyAccessToken();
+
+    // Search for the track on Spotify
+    const searchUrl = 'https://api.spotify.com/v1/search';
+    const playlistUrl = 'https://api.spotify.com/v1/browse/featured-playlists';
+
+    try {
+        // Get track details
+        const searchResponse = await axios.get(searchUrl, {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { q: `track:${title} artist:${artist}`, type: 'track', limit: 1 },
+        });
+
+        let spotifyLink = '';
+        if (searchResponse.data.tracks.items.length > 0) {
+            const track = searchResponse.data.tracks.items[0];
+            spotifyLink = track.external_urls.spotify;
+        }
+
+        // Get suggested playlists
+        const playlistResponse = await axios.get(playlistUrl, {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { country: 'US', limit: 5 },
+        });
+
+        const playlists = playlistResponse.data.playlists.items.map(p => ({
+            name: p.name,
+            url: p.external_urls.spotify,
+        }));
+
+        return { spotifyLink, playlists };
+    } catch (error) {
+        console.error('Error fetching Spotify details:', error);
+        return { spotifyLink: '', playlists: [] };
+    }
+}
+
+// Modified upload route to include Spotify details and recommendations
+app.post('/upload', upload.single('musicFile'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: 'No file uploaded.' });
+    }
+
+    const filePath = req.file.path;
+    const trimmedPath = `uploads/trimmed-${Date.now()}.mp3`;
+
+    ffmpeg(filePath)
+        .setStartTime(0)
+        .setDuration(5)
+        .output(trimmedPath)
+        .on('end', async () => {
+            const result = await identifySong(trimmedPath);
+
+            if (result.success) {
+                const metadata = result.metadata;
+                const title = metadata.title;
+                const artist = metadata.artist;
+
+                // Fetch additional data
+                const lyrics = await fetchLyrics(artist, title);
+                const videoUrl = await fetchYouTubeVideoUrl(artist, title);
+                const spotifyDetails = await fetchSpotifyDetails(artist, title);
+                const similarSongs = await fetchRecommendedSongs(artist, title);
+
+                res.json({
+                    success: true,
+                    title,
+                    artist,
+                    lyrics: lyrics || 'Lyrics not available',
+                    videoUrl: videoUrl || '',
+                    spotifyLink: spotifyDetails.spotifyLink || '',
+                    playlists: spotifyDetails.playlists || [],
+                    similarSongs: similarSongs || [],
+                });
+            } else {
+                res.json({ success: false, message: 'Unable to recognize the song.' });
+            }
+
+            fs.unlink(trimmedPath, () => {});
+        })
+        .on('error', (err) => {
+            console.error('Error processing audio:', err);
+            res.status(500).json({ success: false, message: 'Error processing the audio file.' });
+        })
+        .run();
 });
-
-// Middleware
-app.use(express.json());
-
 // Registration Endpoint
 app.post('/signup', async (req, res) => {
     const { email, password, full_name } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    db.query('INSERT INTO users (email, password, full_name) VALUES (?, ?, ?)', [email, hashedPassword, full_name], (err, result) => {
-        if (err) {
-            if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: 'User already exists' });
-            return res.status(500).json({ message: 'Server error' });
+    db.query(
+        'INSERT INTO users (email, password, full_name) VALUES (?, ?, ?)',
+        [email, hashedPassword, full_name],
+        (err) => {
+            if (err) return res.status(500).json({ message: 'User already exists or server error.' });
+            res.status(201).json({ message: 'User registered successfully.' });
         }
-        res.status(201).json({ message: 'User registered successfully' });
-    });
+    );
 });
+
+// Lyrics Retrieval Function
+async function fetchLyrics(artist, title) {
+    try {
+        const lyricsOvhResponse = await axios.get(`https://api.lyrics.ovh/v1/${artist}/${title}`);
+        if (lyricsOvhResponse.data.lyrics) {
+            return lyricsOvhResponse.data.lyrics.replace(/\n{2,}/g, '\n\n');
+        }
+    } catch (err) {
+        console.error('Lyrics.ovh API error:', err.message);
+    }
+
+    // Fallback to Genius API
+    try {
+        const searchUrl = `https://api.genius.com/search?q=${encodeURIComponent(artist + ' ' + title)}`;
+        const geniusResponse = await axios.get(searchUrl, {
+            headers: { Authorization: `Bearer ${GENIUS_API_KEY}` }
+        });
+
+        if (geniusResponse.data.response.hits.length > 0) {
+            const songPath = geniusResponse.data.response.hits[0].result.path;
+            const songUrl = `https://genius.com${songPath}`;
+
+            const pageResponse = await axios.get(songUrl);
+            const $ = cheerio.load(pageResponse.data);
+            let lyrics = $('.lyrics').text().trim() || $('[data-lyrics-container]').text().trim();
+
+            return lyrics || 'Lyrics not found';
+        }
+    } catch (err) {
+        console.error('Genius API or scraping error:', err.message);
+    }
+
+    return 'Lyrics not found';
+}
 
 // Login Endpoint
 app.post('/signin', (req, res) => {
     const { email, password } = req.body;
 
     db.query('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
-        if (err || results.length === 0) return res.status(400).json({ message: 'Invalid credentials' });
+        if (err || results.length === 0) return res.status(400).json({ message: 'Invalid credentials.' });
 
         const user = results[0];
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
-        if (!isPasswordValid) return res.status(400).json({ message: 'Invalid credentials' });
+        if (!isPasswordValid) return res.status(400).json({ message: 'Invalid credentials.' });
 
-        // Generate JWT Token
         const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '1h' });
         res.json({ message: 'Login successful', token });
     });
 });
 
-// Protected Route Example (optional)
-app.get('/protected', (req, res) => {
-    const token = req.headers.authorization.split(' ')[1];
-
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ message: 'Access denied' });
-        res.json({ message: 'Protected content accessed', user });
-    });
+// File upload and processing logic
+app.post('/upload', async (req, res) => {
+    // Route logic calling fetchLyrics here
 });
 
 app.listen(PORT, () => {
