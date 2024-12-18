@@ -161,6 +161,28 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     
     
+    const OpenAI = require('openai');
+
+const openai = new OpenAI({
+    apiKey: 'YOUR_API_KEY',
+});
+
+async function testModel() {
+    try {
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini-2024-07-18',
+            messages: [{ role: 'user', content: 'Hello, can you confirm this works?' }],
+            max_tokens: 50,
+        });
+        console.log(response.choices[0].message.content);
+    } catch (error) {
+        console.error('Error:', error.message);
+    }
+}
+
+testModel();
+
+
     // Example usage when a song is chosen
     document.querySelector('#intelligentSearchButton').addEventListener('click', async function () {
         const userQuery = document.querySelector('#intelligentSearchInput').value.trim();
