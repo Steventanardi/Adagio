@@ -53,8 +53,39 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    document.getElementById('intelligentSearchButton').addEventListener('click', intelligentMusicSearch);
-
+    document.querySelector('#intelligentSearchButton').addEventListener('click', async function () {
+        const queryInput = document.querySelector('#intelligentSearchInput');
+        const userQuery = queryInput.value.trim();
+    
+        if (!userQuery) {
+            alert('Please enter a query before searching.');
+            return;
+        }
+    
+        try {
+            const response = await fetch('/intelligent-search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: userQuery }),
+            });
+    
+            const result = await response.json();
+            const resultContainer = document.querySelector('#result');
+    
+            if (result.success) {
+                resultContainer.innerHTML = `
+                    <div class="result-content">
+                        <h3>Search Result</h3>
+                        <p>${result.response}</p>
+                    </div>`;
+            } else {
+                resultContainer.innerHTML = `<p class="error">No results found. Please try again!</p>`;
+            }
+        } catch (error) {
+            console.error('Error fetching search results:', error);
+            alert('Error fetching intelligent search results.');
+        }
+    });
 
     async function intelligentMusicSearch() {
         const userQuery = prompt("Enter your music query: (e.g., Recommend a jazz song, find a similar track, etc.)");
@@ -80,6 +111,130 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
     
+    function updateMusicPlayer(title, artist, audioUrl) {
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioSource = document.getElementById('audioSource');
+        const trackTitle = document.getElementById('trackTitle');
+        const trackArtist = document.getElementById('trackArtist');
+    
+        if (audioUrl) {
+            audioSource.src = audioUrl;
+            audioPlayer.load(); // Reload player
+            audioPlayer.play(); // Start playing the song
+        } else {
+            alert('Audio URL not available for this song.');
+        }
+    
+        trackTitle.textContent = `Title: ${title}`;
+        trackArtist.textContent = `Artist: ${artist}`;
+    }
+    
+    document.getElementById('intelligentSearchButton').addEventListener('click', async () => {
+        const userQuery = document.getElementById('intelligentSearchInput').value.trim();
+        if (!userQuery) return alert('Please enter a query.');
+    
+        try {
+            const response = await fetch('/intelligent-search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: userQuery }),
+            });
+    
+            const result = await response.json();
+            const resultContainer = document.getElementById('result');
+    
+            if (result.success) {
+                resultContainer.innerHTML = `
+                    <div class="result-content">
+                        <h3>Search Result</h3>
+                        <p>${result.response}</p>
+                    </div>`;
+                
+                updateMusicPlayer(result.title, result.artist, result.audioUrl);
+            } else {
+                resultContainer.innerHTML = `<p class="error">No results found.</p>`;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error fetching song details.');
+        }
+    });
+    
+    
+    // Example usage when a song is chosen
+    document.querySelector('#intelligentSearchButton').addEventListener('click', async function () {
+        const userQuery = document.querySelector('#intelligentSearchInput').value.trim();
+    
+        if (!userQuery) {
+            alert('Please enter a query.');
+            return;
+        }
+    
+        try {
+            const response = await fetch('/intelligent-search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: userQuery }),
+            });
+    
+            const result = await response.json();
+            const resultContainer = document.querySelector('#result');
+    
+            if (result.success) {
+                // Format the response into a clean HTML structure
+                const formattedResponse = result.response
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
+                    .replace(/\n/g, '<br>'); // Line breaks
+    
+                resultContainer.innerHTML = `
+                    <div class="result-content">
+                        <h3>Search Result</h3>
+                        <p>${formattedResponse}</p>
+                    </div>`;
+                
+                // Update the music player with a sample audio URL
+                const audioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+                updateMusicPlayer('Selected Track', 'Unknown Artist', audioUrl);
+            } else {
+                resultContainer.innerHTML = `<p class="error">No results found. Please try again!</p>`;
+            }
+        } catch (error) {
+            console.error('Error fetching search results:', error);
+            alert('An error occurred while processing your request.');
+        }
+    });
+    
+    
+    function createSongList(songs) {
+        const resultContainer = document.getElementById('result');
+        resultContainer.innerHTML = ''; // Clear existing content
+    
+        songs.forEach(song => {
+            const songItem = document.createElement('div');
+            songItem.classList.add('song-item');
+            songItem.textContent = `${song.title} by ${song.artist}`;
+            songItem.addEventListener('click', () => {
+                updateMusicPlayer(song.title, song.artist, song.audioUrl);
+            });
+            resultContainer.appendChild(songItem);
+        });
+    }
+    
+    function updateMusicPlayer(title, artist, audioUrl) {
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioSource = document.getElementById('audioSource');
+        const trackTitle = document.getElementById('trackTitle');
+        const trackArtist = document.getElementById('trackArtist');
+    
+        if (audioUrl) {
+            audioSource.src = audioUrl;
+            audioPlayer.load(); // Reload player with new source
+            audioPlayer.play(); // Auto-play the song
+        }
+    
+        trackTitle.textContent = `Title: ${title || 'Not Playing'}`;
+        trackArtist.textContent = `Artist: ${artist || 'Unknown'}`;
+    }
     
 
     // Event Listener for Identify Button

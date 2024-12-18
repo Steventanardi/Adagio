@@ -26,6 +26,31 @@ header {
     height: 80px; /* Adjust the height as needed */
 }
 
+#intelligentSearchInput {
+    width: 80%;
+    padding: 10px;
+    font-size: 16px;
+    margin-bottom: 10px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+}
+
+#intelligentSearchButton {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#intelligentSearchButton:hover {
+    background-color: #0056b3;
+}
+
+
 footer {
     width: 100%; /* Make the footer full width */
     text-align: center;
@@ -36,6 +61,31 @@ footer {
     left: 0; /* Align to the far left */
     right: 0; /* Align to the far right */
     bottom: 0; /* Stick to the bottom */
+}
+
+.result-content {
+    background-color: #fff;
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    line-height: 1.6;
+    color: #333;
+}
+
+.result-content h3 {
+    color: #007bff;
+    margin-bottom: 10px;
+}
+
+.result-content p {
+    color: #555;
+    line-height: 1.6;
+}
+
+.error {
+    color: #ff0000;
+    font-weight: bold;
 }
 
 footer p {
@@ -218,50 +268,54 @@ button:disabled {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
 }
 
-.music-player {
+.music-player-container {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color: #ffffff;
-    color: #333;
-    padding: 15px 20px;
+    bottom: 20px; /* Adds some spacing from bottom */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%); /* Perfect centering */
+    background-color: #1e1e3f; /* Dark background */
+    color: white;
     display: flex;
     align-items: center;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    padding: 15px 20px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
     z-index: 1000;
+    border-radius: 12px;
+    max-width: 800px;
+    width: 90%;
     justify-content: space-between;
-    width: 100%;
-    box-sizing: border-box;
-    gap: 20px;
-}
-
-.album-art {
-    width: 50px;
-    height: 50px;
-    border-radius: 8px;
 }
 
 .player-info {
+    margin-left: 20px;
     text-align: left;
-    flex: 1;
-    overflow: hidden;
 }
 
-.player-info h3 {
+.player-info h3, .player-info p {
     margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.5;
 }
 
-.player-info p {
-    margin: 0;
-    font-size: 0.875rem;
-    color: #777;
+audio {
+    width: 100%;
+    outline: none;
+    border-radius: 8px;
 }
+
+
+.song-item {
+    padding: 10px;
+    margin: 5px 0;
+    background: #333;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.song-item:hover {
+    background: #555;
+}
+
 
 #seek-bar {
     width: 150px;

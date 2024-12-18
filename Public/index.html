@@ -62,17 +62,22 @@
     <div class="container">
         <div class="identify-container">
             <h2>Intelligent Music Search</h2>
-            <button id="intelligentSearchButton">Ask Adagio!</button>
+            <input type="text" id="intelligentSearchInput" placeholder="Ask Adagio! (e.g., Recommend a jazz song)">
+            <button id="intelligentSearchButton">Search</button>
+            <div id="result"></div>
+        </div>
+           
+        <div class="music-player-container" id="musicPlayerContainer">
+            <audio id="audioPlayer" controls>
+                <source id="audioSource" src="" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+            <div class="player-info">
+                <h3 id="trackTitle">Title: Not Playing</h3>
+                <p id="trackArtist">Artist: Unknown</p>
+            </div>
         </div>
         
-        <!-- Container for Identify Your Music -->
-        <div class="identify-container">
-            <h2>Identify Your Music</h2>
-            <input type="file" id="musicInput" accept="audio/*">
-            <button id="identifyButton">Identify</button>
-            <div id="result" class="result-box"></div>
-        </div>
-
 
         <div class="live-section">
             <h2>Live Listening through Microphone</h2>
@@ -80,6 +85,7 @@
             <button id="stopListeningMic" disabled>Stop Listening through Microphone</button>
             <div id="liveResultMic" class="result-box"></div>
         </div>
+        
     </div>
 
     <footer>

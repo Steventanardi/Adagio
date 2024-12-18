@@ -181,7 +181,7 @@ app.post('/upload', upload.single('musicFile'), async (req, res) => {
 });
 
 app.post('/intelligent-search', async (req, res) => {
-    const { query } = req.body; // User's music-related query
+    const { query } = req.body;
 
     if (!query) {
         return res.status(400).json({ success: false, message: 'Query cannot be empty' });
@@ -189,22 +189,59 @@ app.post('/intelligent-search', async (req, res) => {
 
     try {
         const chatResponse = await openai.chat.completions.create({
-            model: 'gpt-4o-mini-2024-07-18', // Use GPT-4 or 'gpt-3.5-turbo'
+            model: 'gpt-3.5-turbo', // Change this to gpt-3.5-turbo
             messages: [
-                { role: 'system', content: 'You are a music expert who recommends and searches for music intelligently.' },
+                { role: 'system', content: 'You are a music expert.' },
                 { role: 'user', content: query }
             ],
             max_tokens: 300,
         });
+        
+        
 
-        const responseMessage = chatResponse.choices[0].message.content;
+        const responseMessage = chatResponse.choices[0]?.message?.content;
 
-        res.json({ success: true, response: responseMessage });
+        // Mocked Audio URL (replace with real logic fetching audio)
+        const mockAudioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+
+        // Extract song metadata (basic placeholder logic)
+        const songTitle = "Mock Song Title";
+        const artistName = "Mock Artist";
+
+        res.json({
+            success: true,
+            response: responseMessage,
+            audioUrl: mockAudioUrl,
+            title: songTitle,
+            artist: artistName,
+        });
     } catch (error) {
-        console.error('OpenAI API error:', error);
+        console.error('Error:', error.message);
         res.status(500).json({ success: false, message: 'Failed to process query' });
     }
 });
+
+
+
+async function fetchSpotifyTrack(artist, title) {
+    const token = await getSpotifyAccessToken(); // Function already exists
+    const searchUrl = 'https://api.spotify.com/v1/search';
+
+    try {
+        const response = await axios.get(searchUrl, {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { q: `track:${title} artist:${artist}`, type: 'track', limit: 1 },
+        });
+
+        if (response.data.tracks.items.length > 0) {
+            const track = response.data.tracks.items[0];
+            return track.preview_url; // Returns a 30-second audio preview
+        }
+    } catch (error) {
+        console.error('Spotify track fetch error:', error.message);
+    }
+    return null;
+}
 
 
 // Function to fetch streaming links and suggested playlists
