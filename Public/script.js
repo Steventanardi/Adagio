@@ -119,19 +119,217 @@ document.addEventListener('DOMContentLoaded', function () {
     
         if (audioUrl) {
             audioSource.src = audioUrl;
-            audioPlayer.load(); // Reload player
-            audioPlayer.play(); // Start playing the song
+            audioPlayer.load();
+            audioPlayer.play().catch(error => {
+                console.error('Error playing audio:', error);
+                alert('Unable to play the selected track. Please try again.');
+            });
         } else {
             alert('Audio URL not available for this song.');
         }
     
-        trackTitle.textContent = `Title: ${title}`;
-        trackArtist.textContent = `Artist: ${artist}`;
+        trackTitle.textContent = `Title: ${title || 'Not Playing'}`;
+        trackArtist.textContent = `Artist: ${artist || 'Unknown'}`;
     }
+    
+    const audioPlayer = document.getElementById('audioPlayer');
+audioPlayer.addEventListener('timeupdate', () => {
+    const currentTime = Math.floor(audioPlayer.currentTime);
+    const duration = Math.floor(audioPlayer.duration);
+    document.getElementById('currentTime').textContent = `Time: ${currentTime}s / ${duration}s`;
+});
+
+    function updateMusicPlayerWithLoading(title, artist, audioUrl) {
+        const audioPlayerContainer = document.getElementById('musicPlayerContainer');
+        audioPlayerContainer.classList.add('loading');
+        updateMusicPlayer(title, artist, audioUrl);
+        audioPlayerContainer.classList.remove('loading');
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+    const musicRecommendationContainer = document.getElementById('musicRecommendation');
+
+    // Function to update music and video details dynamically
+    function updateMusicAndVideo(title, artist, audioUrl, videoUrl) {
+        if (!audioUrl || !videoUrl) {
+            musicRecommendationContainer.innerHTML = `<p class="error">Unable to load music or video. Please try again.</p>`;
+            return;
+        }
+
+        musicRecommendationContainer.innerHTML = `
+            <div class="music-info">
+                <h3>${title}</h3>
+                <p>By: ${artist}</p>
+                <audio id="audioPlayer" controls>
+                    <source src="${audioUrl}" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+                <iframe 
+                    src="${videoUrl}" 
+                    frameborder="0" 
+                    allow="autoplay; encrypted-media" 
+                    allowfullscreen 
+                    class="video-iframe">
+                </iframe>
+            </div>`;
+        
+        // Automatically play the audio
+        const audioPlayer = document.getElementById('audioPlayer');
+        audioPlayer.play().catch(err => console.error('Error playing audio:', err));
+    }
+
+    // Fetch music recommendation dynamically
+    async function fetchMusicRecommendation() {
+        try {
+            const response = await fetch('/intelligent-search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: 'Recommend a pop song' })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                updateMusicAndVideo(
+                    result.title,
+                    result.artist,
+                    result.audioUrl,
+                    result.videoUrl
+                );
+            } else {
+                musicRecommendationContainer.innerHTML = `<p class="error">No recommendation available.</p>`;
+            }
+        } catch (error) {
+            console.error('Error fetching recommendation:', error);
+            musicRecommendationContainer.innerHTML = `<p class="error">An error occurred while fetching recommendations. Please try again later.</p>`;
+        }
+    }
+
+    // Fetch recommendation on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        const musicRecommendationContainer = document.getElementById('musicRecommendation');
+    
+        // Function to update music and video details dynamically
+        function updateMusicAndVideo(title, artist, audioUrl, videoUrl) {
+            if (!audioUrl || !videoUrl) {
+                musicRecommendationContainer.innerHTML = `<p class="error">Unable to load music or video. Please try again.</p>`;
+                return;
+            }
+    
+            musicRecommendationContainer.innerHTML = `
+                <div class="music-info">
+                    <h3>${title}</h3>
+                    <p>By: ${artist}</p>
+                    <audio id="audioPlayer" controls>
+                        <source src="${audioUrl}" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                    <iframe 
+                        src="${videoUrl}" 
+                        frameborder="0" 
+                        allow="autoplay; encrypted-media" 
+                        allowfullscreen 
+                        class="video-iframe">
+                    </iframe>
+                </div>`;
+            
+            // Automatically play the audio
+            const audioPlayer = document.getElementById('audioPlayer');
+            audioPlayer.play().catch(err => console.error('Error playing audio:', err));
+        }
+    
+        // Fetch music recommendation dynamically
+        async function fetchMusicRecommendation() {
+            try {
+                const response = await fetch('/intelligent-search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: 'Recommend a pop song' })
+                });
+    
+                const result = await response.json();
+                if (result.success) {
+                    updateMusicAndVideo(
+                        result.title,
+                        result.artist,
+                        result.audioUrl,
+                        result.videoUrl
+                    );
+                } else {
+                    musicRecommendationContainer.innerHTML = `<p class="error">No recommendation available.</p>`;
+                }
+            } catch (error) {
+                console.error('Error fetching recommendation:', error);
+                musicRecommendationContainer.innerHTML = `<p class="error">An error occurred while fetching recommendations. Please try again later.</p>`;
+            }
+        }
+    
+        // Fetch recommendation on page load
+        fetchMusicRecommendation();
+    });
+    
+
+    
+        // Function to update music and video details
+        function updateMusicAndVideo(title, artist, audioUrl, videoUrl) {
+            musicRecommendationContainer.innerHTML = `
+                <div class="music-info">
+                    <h3>${title}</h3>
+                    <p>By: ${artist}</p>
+                    <audio controls>
+                        <source src="${audioUrl}" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                    <iframe 
+                        src="${videoUrl}" 
+                        frameborder="0" 
+                        allow="autoplay; encrypted-media" 
+                        allowfullscreen 
+                        class="video-iframe">
+                    </iframe>
+                </div>`;
+        }
+    
+        // Example: Fetching recommendation (replace with your API logic)
+        async function fetchMusicRecommendation() {
+            try {
+                const response = await fetch('/intelligent-search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: 'Recommend a pop song' })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    updateMusicAndVideo(
+                        result.title,
+                        result.artist,
+                        result.audioUrl,
+                        result.videoUrl
+                    );
+                } else {
+                    musicRecommendationContainer.innerHTML = '<p class="error">No recommendation available.</p>';
+                }
+            } catch (error) {
+                console.error('Error fetching recommendation:', error);
+            }
+        }
+    
+        // Fetch recommendation on page load
+        fetchMusicRecommendation();
+    });
+
     
     document.getElementById('intelligentSearchButton').addEventListener('click', async () => {
         const userQuery = document.getElementById('intelligentSearchInput').value.trim();
-        if (!userQuery) return alert('Please enter a query.');
+        const resultContainer = document.getElementById('result');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioSource = document.getElementById('audioSource');
+        const trackTitle = document.getElementById('trackTitle');
+        const trackArtist = document.getElementById('trackArtist');
+    
+        if (!userQuery) {
+            alert('Please enter a query.');
+            return;
+        }
     
         try {
             const response = await fetch('/intelligent-search', {
@@ -141,24 +339,36 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     
             const result = await response.json();
-            const resultContainer = document.getElementById('result');
     
             if (result.success) {
+                // Update the result container
                 resultContainer.innerHTML = `
                     <div class="result-content">
                         <h3>Search Result</h3>
                         <p>${result.response}</p>
                     </div>`;
-                
-                updateMusicPlayer(result.title, result.artist, result.audioUrl);
+    
+                // Update the audio player
+                if (result.audioUrl) {
+                    audioSource.src = result.audioUrl;
+                    audioPlayer.load(); // Reload the audio player
+                    audioPlayer.play(); // Start playing the audio
+                } else {
+                    alert('Audio source unavailable for this track.');
+                }
+    
+                // Update the track title and artist
+                trackTitle.textContent = `Title: ${result.title || 'Not Playing'}`;
+                trackArtist.textContent = `Artist: ${result.artist || 'Unknown'}`;
             } else {
-                resultContainer.innerHTML = `<p class="error">No results found.</p>`;
+                resultContainer.innerHTML = `<p class="error">No results found. Please try again.</p>`;
             }
         } catch (error) {
-            console.error('Error:', error);
-            alert('Error fetching song details.');
+            console.error('Error fetching search results:', error);
+            alert('An error occurred while fetching the search results.');
         }
     });
+    
     
     
     const OpenAI = require('openai');
