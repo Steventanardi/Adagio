@@ -1,30 +1,23 @@
 body {
-    background-color: #212121 !important; /* Ensure it overrides other styles */
-    font-family: 'Roboto', sans-serif;
     margin: 0;
-    padding: 0;
-    color: #333;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    box-sizing: border-box;
+    padding-top: 100px; /* Add space for the floating header */
+    background-color: #f4f7fc; /* Optional background for contrast */
 }
 
 
 header {
-    width: 100%;
+    height: 60px; /* Set a specific height */
+    padding: 0 30px; /* Adjust padding for spacing */
     display: flex;
+    align-items: center; /* Vertically align items */
     justify-content: space-between;
-    align-items: center;
-    padding: 20px 40px;
-    background-color: #171717;
-    box-sizing: border-box;
-    position: fixed; /* Fixes the header at the top of the screen */
-    top: 0; /* Positions the header at the top */
-    left: 0;
-    z-index: 1000; /* Ensures the header stays on top of other content */
-    height: 80px; /* Adjust the height as needed */
+    background-color: #171717; /* Header background color */
+    border-radius: 25px; /* Rounded corners */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Optional shadow */
+    margin: 20px auto; /* Adjust outer spacing */
+    width: 93%;
 }
+
 
 #intelligentSearchInput {
     width: 80%;
@@ -125,78 +118,47 @@ nav ul li a:hover {
     color: #50c9ce; /* Light blue on hover */
 }
 
-/* Dropdown menu styling */
-.dropdown-menu {
-    display: none;
-    position: absolute;
-    background-color: #0d0d0d;
-    top: 100%;
-    left: 0;
-    min-width: 200px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-    z-index: 1;
-}
-
-.dropdown:hover .dropdown-menu {
-    display: block;
-}
-
-/* Dropdown menu styling */
-.dropdown-menu {
-    display: none;
-    position: absolute;
-    background-color: #0d0d0d;
-    top: 100%;
-    left: 0;
-    min-width: 200px;
-    padding: 0; /* Remove padding */
-    margin: 0; /* Remove margin */
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
-    z-index: 1;
-}
-
-.dropdown-menu li {
-    list-style: none;
-    padding: 0; /* Remove padding */
-    margin: 0; /* Remove margin */
-}
-
-.dropdown-menu li a {
-    display: block;
-    padding: 10px 20px;
-    margin: 0; /* Remove any margin */
-    text-decoration: none;
-    color: white;
-    font-size: 16px;
-    white-space: nowrap;
+/* About button */
+.info-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px; /* Diameter of the circle */
+    height: 50px; /* Diameter of the circle */
+    background-color: #2f2f2f; /* Button background color */
+    border-radius: 50%; /* Makes the button circular */
+    color: white; /* Icon color */
+    text-decoration: none; /* Remove underline */
+    font-size: 20px; /* Icon size */
     transition: background-color 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Optional shadow for depth */
 }
 
-.dropdown-menu li a:hover {
-    background-color: #50c9ce; /* Highlight on hover */
-    color: white; /* Ensure text stays white on hover */
+.info-btn:hover {
+    background-color: #3ba1a7; /* Hover color */
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2); /* Enhance shadow on hover */
 }
 
-/* Show the dropdown when hovering over the Features menu item */
-.dropdown:hover .dropdown-menu {
-    display: block;
-}
 
 /* Sign In Button Styling */
 .sign-in-btn {
-    background-color:#2f2f2f; /* Light blue background */
-    color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    font-size: 18px;
-    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px; /* Diameter of the circle */
+    height: 50px; /* Diameter of the circle */
+    background-color: #2f2f2f; /* Button background color */
+    border-radius: 50%; /* Makes the button circular */
+    color: white; /* Icon color */
+    text-decoration: none; /* Remove underline */
+    font-size: 20px; /* Icon size */
     transition: background-color 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Optional shadow for depth */
 }
 
 .sign-in-btn:hover {
-    background-color: #3ba1a7; /* Darker blue on hover */
+    background-color: #3ba1a7; /* Change color on hover */
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2); /* Enhance shadow on hover */
 }
 
 .container {
@@ -209,6 +171,130 @@ nav ul li a:hover {
     text-align: center;
     margin: 40px auto 100px auto; /* Adding margin to give space above audio player */
 }
+
+.spacer {
+    flex: 1; /* Fills all available space */
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 20px; /* Adds spacing from the top */
+    left: 20px; /* Adds spacing from the left */
+    height: calc(95% - 40px); /* Slightly reduce the height */
+    width: 80px; /* Sidebar width */
+    background-color: #171717;
+    border-radius: 20px; /* Curved corners */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); /* Floating shadow effect */
+    z-index: 1000;
+}
+
+
+.sidebar a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    margin: 10px 0;
+    border-radius: 50%; /* Makes the buttons circular */
+    color: white;
+    background-color: #2f2f2f;
+    text-decoration: none;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.sidebar a:hover {
+    background-color: #50c9ce; /* Change color on hover */
+    transform: scale(1.1); /* Adds a slight zoom effect on hover */
+}
+
+.sidebar .logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 30px;
+    color: white;
+}
+
+.sidebar .spacer {
+    flex: 1;
+}
+
+/*hero*/
+.hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100vh; /* Full screen height */
+    background-color: #f4f7fc; /* Light background */
+}
+
+.intro-container {
+    text-align: center;
+    margin-top: 50px; /* Add spacing from the top */
+}
+
+.sphere-with-greeting {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px; /* Space between sphere and text */
+    margin-bottom: 30px; /* Space below this section */
+}
+
+.greeting h1 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 0;
+    color: #333;
+}
+
+.greeting h2 {
+    font-size: 1.5rem;
+    font-weight: normal;
+    color: #555;
+    margin: 5px 0 0;
+}
+
+.search-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px; /* Space above the search bar */
+}
+
+#searchInput {
+    width: 300px;
+    padding: 10px;
+    font-size: 16px;
+    border: 2px solid #ccc;
+    border-radius: 8px 0 0 8px;
+    outline: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.search-btn {
+    padding: 10px 20px;
+    background-color: #ff5252;
+    color: white;
+    border: none;
+    border-radius: 0 8px 8px 0;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.search-btn:hover {
+    background-color: #e64545;
+}
+
+.search-btn i {
+    font-size: 1.2rem;
+}
+
 
 /* Centering the Sign-In Container */
 .centered-container {
@@ -774,23 +860,6 @@ audio {
     border-radius: 50%;
     cursor: pointer;
 }
-
-/* Sign In Button Styling */
-.sign-in-container {
-    position: relative;
-    display: inline-block;
-}
-
-.sign-in-btn {
-    background-color: #50c9ce; /* Light blue background */
-    color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    font-size: 18px;
-    text-decoration: none;
-    transition: background-color 0.3s ease;
-}
-
 
 /* Hide the dropdown buttons initially */
 .dropdown-buttons {
