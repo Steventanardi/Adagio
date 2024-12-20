@@ -53,40 +53,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    document.querySelector('#intelligentSearchButton').addEventListener('click', async function () {
-        const queryInput = document.querySelector('#intelligentSearchInput');
-        const userQuery = queryInput.value.trim();
-    
-        if (!userQuery) {
-            alert('Please enter a query before searching.');
-            return;
-        }
-    
-        try {
-            const response = await fetch('/intelligent-search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: userQuery }),
-            });
-    
-            const result = await response.json();
-            const resultContainer = document.querySelector('#result');
-    
-            if (result.success) {
-                resultContainer.innerHTML = `
-                    <div class="result-content">
-                        <h3>Search Result</h3>
-                        <p>${result.response}</p>
-                    </div>`;
-            } else {
-                resultContainer.innerHTML = `<p class="error">No results found. Please try again!</p>`;
-            }
-        } catch (error) {
-            console.error('Error fetching search results:', error);
-            alert('Error fetching intelligent search results.');
-        }
-    });
-
     async function intelligentMusicSearch() {
         const userQuery = prompt("Enter your music query: (e.g., Recommend a jazz song, find a similar track, etc.)");
     
@@ -318,18 +284,9 @@ audioPlayer.addEventListener('timeupdate', () => {
     });
 
     
-    document.getElementById('intelligentSearchButton').addEventListener('click', async () => {
-        const userQuery = document.getElementById('intelligentSearchInput').value.trim();
-        const resultContainer = document.getElementById('result');
-        const audioPlayer = document.getElementById('audioPlayer');
-        const audioSource = document.getElementById('audioSource');
-        const trackTitle = document.getElementById('trackTitle');
-        const trackArtist = document.getElementById('trackArtist');
-    
-        if (!userQuery) {
-            alert('Please enter a query.');
-            return;
-        }
+    document.getElementById('searchButton').addEventListener('click', async () => {
+        const userQuery = document.getElementById('searchInput').value.trim();
+        if (!userQuery) return alert('Please enter a query.');
     
         try {
             const response = await fetch('/intelligent-search', {
@@ -339,37 +296,79 @@ audioPlayer.addEventListener('timeupdate', () => {
             });
     
             const result = await response.json();
-    
             if (result.success) {
-                // Update the result container
-                resultContainer.innerHTML = `
-                    <div class="result-content">
-                        <h3>Search Result</h3>
-                        <p>${result.response}</p>
-                    </div>`;
-    
-                // Update the audio player
-                if (result.audioUrl) {
-                    audioSource.src = result.audioUrl;
-                    audioPlayer.load(); // Reload the audio player
-                    audioPlayer.play(); // Start playing the audio
-                } else {
-                    alert('Audio source unavailable for this track.');
-                }
-    
-                // Update the track title and artist
-                trackTitle.textContent = `Title: ${result.title || 'Not Playing'}`;
-                trackArtist.textContent = `Artist: ${result.artist || 'Unknown'}`;
+                alert(`Result: ${result.response}`);
             } else {
-                resultContainer.innerHTML = `<p class="error">No results found. Please try again.</p>`;
+                alert('No results found.');
             }
         } catch (error) {
-            console.error('Error fetching search results:', error);
-            alert('An error occurred while fetching the search results.');
+            console.error('Error:', error);
+            alert('Search failed.');
         }
     });
     
+    document.addEventListener('DOMContentLoaded', () => {
+        const musicRecommendationContainer = document.getElementById('musicRecommendation');
     
+        // Function to update music and video details dynamically
+        function updateMusicAndVideo(title, artist, audioUrl, videoUrl) {
+            if (!audioUrl || !videoUrl) {
+                musicRecommendationContainer.innerHTML = `<p class="error">Unable to load music or video. Please try again.</p>`;
+                return;
+            }
+    
+            musicRecommendationContainer.innerHTML = `
+                <div class="music-info">
+                    <h3>${title}</h3>
+                    <p>By: ${artist}</p>
+                    <audio id="audioPlayer" controls>
+                        <source src="${audioUrl}" type="audio/mpeg">
+                        Your browser does not support the audio element.
+                    </audio>
+                    <iframe 
+                        src="${videoUrl}" 
+                        frameborder="0" 
+                        allow="autoplay; encrypted-media" 
+                        allowfullscreen 
+                        class="video-iframe">
+                    </iframe>
+                </div>`;
+            
+            // Automatically play the audio
+            const audioPlayer = document.getElementById('audioPlayer');
+            audioPlayer.play().catch(err => console.error('Error playing audio:', err));
+        }
+    
+        // Fetch music recommendation dynamically
+        async function fetchMusicRecommendation() {
+            try {
+                const response = await fetch('/intelligent-search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: 'Recommend a pop song' })
+                });
+    
+                const result = await response.json();
+                if (result.success) {
+                    updateMusicAndVideo(
+                        result.title,
+                        result.artist,
+                        result.audioUrl,
+                        result.videoUrl
+                    );
+                } else {
+                    musicRecommendationContainer.innerHTML = `<p class="error">No recommendation available.</p>`;
+                }
+            } catch (error) {
+                console.error('Error fetching recommendation:', error);
+                musicRecommendationContainer.innerHTML = `<p class="error">An error occurred while fetching recommendations. Please try again later.</p>`;
+            }
+        }
+    
+        // Fetch recommendation on page load
+        fetchMusicRecommendation();
+    });
+
     
     const OpenAI = require('openai');
 
@@ -391,50 +390,6 @@ async function testModel() {
 }
 
 testModel();
-
-
-    // Example usage when a song is chosen
-    document.querySelector('#intelligentSearchButton').addEventListener('click', async function () {
-        const userQuery = document.querySelector('#intelligentSearchInput').value.trim();
-    
-        if (!userQuery) {
-            alert('Please enter a query.');
-            return;
-        }
-    
-        try {
-            const response = await fetch('/intelligent-search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: userQuery }),
-            });
-    
-            const result = await response.json();
-            const resultContainer = document.querySelector('#result');
-    
-            if (result.success) {
-                // Format the response into a clean HTML structure
-                const formattedResponse = result.response
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
-                    .replace(/\n/g, '<br>'); // Line breaks
-    
-                resultContainer.innerHTML = `
-                    <div class="result-content">
-                        <h3>Search Result</h3>
-                        <p>${formattedResponse}</p>
-                    </div>`;
-                
-                // Update the music player with a sample audio URL
-                const audioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-                updateMusicPlayer('Selected Track', 'Unknown Artist', audioUrl);
-            } else {
-                resultContainer.innerHTML = `<p class="error">No results found. Please try again!</p>`;
-            }
-        } catch (error) {
-            console.error('Error fetching search results:', error);
-            alert('An error occurred while processing your request.');
-        }
-    });
     
     
     function createSongList(songs) {
