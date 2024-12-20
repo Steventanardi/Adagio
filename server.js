@@ -221,6 +221,29 @@ app.post('/intelligent-search', async (req, res) => {
     }
 });
 
+document.getElementById('searchButton').addEventListener('click', async () => {
+    const userQuery = document.getElementById('searchInput').value.trim();
+    if (!userQuery) return alert('Please enter a query.');
+
+    try {
+        const response = await fetch('/intelligent-search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: userQuery }),
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            // Process results
+            alert(`Result: ${result.response}`);
+        } else {
+            alert('No results found.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Search failed.');
+    }
+});
 
 
 async function fetchSpotifyTrack(artist, title) {
