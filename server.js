@@ -191,7 +191,7 @@ app.post('/intelligent-search', async (req, res) => {
         const chatResponse = await openai.chat.completions.create({
             model: 'gpt-3.5-turbo', // Change this to gpt-3.5-turbo
             messages: [
-                { role: 'system', content: 'You are a music expert.' },
+                { role: 'system', content: 'You are a music expert, you dont answer anything other than music' },
                 { role: 'user', content: query }
             ],
             max_tokens: 300,
@@ -220,31 +220,6 @@ app.post('/intelligent-search', async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to process query' });
     }
 });
-
-document.getElementById('searchButton').addEventListener('click', async () => {
-    const userQuery = document.getElementById('searchInput').value.trim();
-    if (!userQuery) return alert('Please enter a query.');
-
-    try {
-        const response = await fetch('/intelligent-search', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: userQuery }),
-        });
-
-        const result = await response.json();
-        if (result.success) {
-            // Process results
-            alert(`Result: ${result.response}`);
-        } else {
-            alert('No results found.');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Search failed.');
-    }
-});
-
 
 async function fetchSpotifyTrack(artist, title) {
     const token = await getSpotifyAccessToken(); // Function already exists
@@ -405,6 +380,7 @@ async function fetchLyrics(artist, title) {
     return 'Lyrics not found';
 }
 
+
 // Login Endpoint
 app.post('/signin', (req, res) => {
     const { email, password } = req.body;
@@ -426,6 +402,7 @@ app.post('/signin', (req, res) => {
 app.post('/upload', async (req, res) => {
     // Route logic calling fetchLyrics here
 });
+
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

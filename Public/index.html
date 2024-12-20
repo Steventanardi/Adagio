@@ -40,41 +40,22 @@
             <!-- Greeting -->
             <div class="greeting">
                 <h1>Hi I'm Adagio,</h1>
-                <h2>What do you wanna learn?</h2>
+                <h2>Ask me any Music or Songs!</h2>
             </div>
     
             <!-- Search Bar -->
             <div class="search-container">
-                <input type="text" id="searchInput" placeholder="Search..." />
+                <input type="text" id="searchInput" placeholder="Ask Adagio!" />
                 <button id="#intelligentSearchButton" class="search-btn">
                     <i class="fas fa-search"></i>
                 </button>
+                <div id="result"></div>
             </div>
         </div>
     </div>    
 
     <!-- Container -->
-    <div class="container">
-        <div class="identify-container">
-            <h2>Intelligent Music Search</h2>
-            <input type="text" id="intelligentSearchInput" placeholder="Ask Adagio! (e.g., Recommend a jazz song)">
-            <button id="#intelligentSearchButton">Search</button>
-            <div id="result"></div>
-        </div>
-           
-        <div class="music-player-container" id="musicPlayerContainer">
-            <audio id="audioPlayer" controls>
-                <source id="audioSource" src="" type="audio/mpeg">
-                Your browser does not support the audio element.
-            </audio>
-            <div class="player-info">
-                <h3 id="trackTitle">Title: Not Playing</h3>
-                <p id="trackArtist">Artist: Unknown</p>
-            </div>
-        </div>
-        
-        <div id="result"></div>
-        
+    <div class="container">    
         <div class="recommendation-container">
             <h2>Recommended Music</h2>
             <div id="musicRecommendation">
