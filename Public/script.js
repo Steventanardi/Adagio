@@ -42,6 +42,54 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchButton = document.getElementById('intelligentSearchButton');
+        const searchInput = document.getElementById('searchInput');
+        const resultContainer = document.getElementById('result');
+    
+        searchButton.addEventListener('click', async () => {
+            const query = searchInput.value.trim();
+            if (!query) {
+                alert('Please enter a query!');
+                return;
+            }
+    
+            // Display loading indicator
+            resultContainer.innerHTML = '<p>Loading...</p>';
+    
+            try {
+                const response = await fetch('/intelligent-search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query }),
+                });
+    
+                const result = await response.json();
+    
+                if (result.success) {
+                    resultContainer.innerHTML = `
+                        <div class="result-content">
+                            <h3>ChatGPT's Response:</h3>
+                            <p>${result.response}</p>
+                        </div>`;
+                } else {
+                    resultContainer.innerHTML = `
+                        <p class="error">No results found. Please try again!</p>`;
+                }
+            } catch (error) {
+                console.error('Error fetching search results:', error);
+                resultContainer.innerHTML = `
+                    <p class="error">An error occurred while fetching the result. Please try again later.</p>`;
+            }
+        });
+    });
+    
+
+    
+    
     /// Function to show the sound wave animation and hide floating spheres
     function activateSoundWave() {
         // Show the sound wave
@@ -369,7 +417,7 @@ audioPlayer.addEventListener('timeupdate', () => {
         fetchMusicRecommendation();
     });
 
-    
+
     const OpenAI = require('openai');
 
 const openai = new OpenAI({

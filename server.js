@@ -10,6 +10,7 @@ const FormData = require('form-data');
 const cheerio = require('cheerio');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const bodyParser = require('body-parser');
 const { OpenAI } = require('openai');
 require('dotenv').config();
 
@@ -39,6 +40,7 @@ const YOUTUBE_API_KEY = '[GOOGLE_YOUTUBE_LEAKED]';
 
 // Middleware
 app.use(express.json());
+app.use(bodyParser.json());
 app.use(express.static('public'));
 
 // Initialize OpenAI API
@@ -180,6 +182,7 @@ app.post('/upload', upload.single('musicFile'), async (req, res) => {
     }
 });
 
+// Intelligent Search Endpoint
 app.post('/intelligent-search', async (req, res) => {
     const { query } = req.body;
 
@@ -188,38 +191,21 @@ app.post('/intelligent-search', async (req, res) => {
     }
 
     try {
-        const chatResponse = await openai.chat.completions.create({
-            model: 'gpt-3.5-turbo', // Change this to gpt-3.5-turbo
-            messages: [
-                { role: 'system', content: 'You are a music expert, you dont answer anything other than music' },
-                { role: 'user', content: query }
-            ],
+        const response = await openai.chat.completions.create({
+            model: 'gpt-3.5-turbo', // Ensure this matches your desired model
+            messages: [{ role: 'user', content: query }],
             max_tokens: 300,
         });
-        
-        
 
-        const responseMessage = chatResponse.choices[0]?.message?.content;
+        const chatResponse = response.choices[0]?.message?.content;
 
-        // Mocked Audio URL (replace with real logic fetching audio)
-        const mockAudioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-
-        // Extract song metadata (basic placeholder logic)
-        const songTitle = "Mock Song Title";
-        const artistName = "Mock Artist";
-
-        res.json({
-            success: true,
-            response: responseMessage,
-            audioUrl: mockAudioUrl,
-            title: songTitle,
-            artist: artistName,
-        });
+        res.json({ success: true, response: chatResponse });
     } catch (error) {
         console.error('Error:', error.message);
         res.status(500).json({ success: false, message: 'Failed to process query' });
     }
 });
+
 
 async function fetchSpotifyTrack(artist, title) {
     const token = await getSpotifyAccessToken(); // Function already exists
