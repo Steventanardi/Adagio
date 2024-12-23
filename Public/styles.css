@@ -80,7 +80,20 @@ audio {
     box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
 }
 
+.video-item {
+    margin: 10px 0;
+    font-size: 1rem;
+}
 
+.video-item a {
+    color: #007bff;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.video-item a:hover {
+    color: #0056b3;
+}
 
 footer {
     width: 100%; /* Make the footer full width */
@@ -92,6 +105,40 @@ footer {
     left: 0; /* Align to the far left */
     right: 0; /* Align to the far right */
     bottom: 0; /* Stick to the bottom */
+}
+
+.result-container {
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.result-content h3 {
+    font-size: 1.2rem;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.result-container p {
+    color: #333;
+    line-height: 1.5;
+}
+
+.video-item {
+    margin: 10px 0;
+    font-size: 1rem;
+}
+
+.video-item a {
+    color: #007bff;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.video-item a:hover {
+    color: #0056b3;
 }
 
 .result-content {
@@ -115,7 +162,7 @@ footer {
 }
 
 .error {
-    color: #ff0000;
+    color: red;
     font-weight: bold;
 }
 

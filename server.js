@@ -184,27 +184,34 @@ app.post('/upload', upload.single('musicFile'), async (req, res) => {
 
 // Intelligent Search Endpoint
 app.post('/intelligent-search', async (req, res) => {
-    const { query } = req.body;
+    const query = req.body.query; // Extract query from POST body
 
     if (!query) {
-        return res.status(400).json({ success: false, message: 'Query cannot be empty' });
+        return res.status(400).json({ success: false, message: 'Query cannot be empty.' });
     }
 
+    console.log('Received query:', query); // Log after query is defined
+
     try {
-        const response = await openai.chat.completions.create({
-            model: 'gpt-3.5-turbo', // Ensure this matches your desired model
-            messages: [{ role: 'user', content: query }],
+        const chatResponse = await openai.chat.completions.create({
+            model: 'gpt-3.5-turbo',
+            messages: [
+                { role: 'system', content: 'You are a music expert.' },
+                { role: 'user', content: query },
+            ],
             max_tokens: 300,
         });
 
-        const chatResponse = response.choices[0]?.message?.content;
+        const chatText = chatResponse.choices?.[0]?.message?.content || 'No response from ChatGPT';
 
-        res.json({ success: true, response: chatResponse });
+        console.log('ChatGPT Response:', chatText);
+        res.json({ success: true, chatText });
     } catch (error) {
-        console.error('Error:', error.message);
-        res.status(500).json({ success: false, message: 'Failed to process query' });
+        console.error('Error processing query:', error.message);
+        res.status(500).json({ success: false, message: 'Failed to process query.' });
     }
 });
+
 
 
 async function fetchSpotifyTrack(artist, title) {

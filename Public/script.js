@@ -43,51 +43,61 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const searchButton = document.getElementById('intelligentSearchButton');
-        const searchInput = document.getElementById('searchInput');
-        const resultContainer = document.getElementById('result');
+    document.getElementById('intelligentSearchButton').addEventListener('click', async () => {
+        const query = document.getElementById('searchInput').value.trim();
+        const resultContainer = document.getElementById('resultContainer');
     
-        searchButton.addEventListener('click', async () => {
-            const query = searchInput.value.trim();
-            if (!query) {
-                alert('Please enter a query!');
-                return;
+        if (!query) {
+            alert('Please enter a query!');
+            return;
+        }
+    
+        resultContainer.innerHTML = '<p>Loading...</p>';
+    
+        try {
+            const response = await fetch('/intelligent-search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query }),
+            });
+    
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
             }
     
-            // Display loading indicator
-            resultContainer.innerHTML = '<p>Loading...</p>';
+            const result = await response.json();
     
-            try {
-                const response = await fetch('/intelligent-search', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ query: query }),
-                });
-    
-                const result = await response.json();
-    
-                if (result.success) {
-                    resultContainer.innerHTML = `
-                        <div class="result-content">
-                            <h3>ChatGPT's Response:</h3>
-                            <p>${result.response}</p>
-                        </div>`;
-                } else {
-                    resultContainer.innerHTML = `
-                        <p class="error">No results found. Please try again!</p>`;
-                }
-            } catch (error) {
-                console.error('Error fetching search results:', error);
+            if (result.success) {
+                // Extract and clean the songs (remove existing numbering)
+                const songs = result.chatText.split(/(?=\d+\.)/g).map(song => song.replace(/^\d+\.\s*/, '').trim());
+            
+                // Create list items for the songs
+                const listItems = songs.map(song => `<li>${song}</li>`).join('');
+            
+                // Display the songs
                 resultContainer.innerHTML = `
-                    <p class="error">An error occurred while fetching the result. Please try again later.</p>`;
+                    <div>
+                        <h3>ChatGPT's Response:</h3>
+                        <ol style="text-align: left;">${listItems}</ol>
+                    </div>
+                `;
+            } else {
+                resultContainer.innerHTML = `<p class="error">${result.message || 'No results found.'}</p>`;
             }
-        });
+            
+            
+            
+        } catch (error) {
+            console.error('Error fetching search results:', error);
+            resultContainer.innerHTML = '<p class="error">An error occurred. Please try again later.</p>';
+        }
     });
     
+    
+    
+    console.log('Query:', query);
 
+    
     
     
     /// Function to show the sound wave animation and hide floating spheres

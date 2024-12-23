@@ -18,6 +18,13 @@
     </header>
 
     <div class="container">
+        <div class="container">
+            <h2>Result</h2>
+            <div id="chatResponse"></div>
+    
+            <h2>Related YouTube Videos</h2>
+            <div id="videoLinks"></div>
+        </div>
         <div class="song-info">
             <h2>Song Information</h2>
             <p><strong>Title:</strong> <span id="songTitle"></span></p>
@@ -57,6 +64,27 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const urlParams = new URLSearchParams(window.location.search);
+            const chatText = decodeURIComponent(urlParams.get('chatText') || 'No response from ChatGPT');
+            const videosParam = urlParams.get('videos') || '[]';
+            let videos = [];
+        
+            try {
+                videos = JSON.parse(decodeURIComponent(videosParam));
+            } catch (error) {
+                console.error('Error parsing videos:', error);
+            }
+        
+            // Display ChatGPT response
+            const chatResponseContainer = document.getElementById('chatResponse');
+            chatResponseContainer.innerHTML = `<p>${chatText}</p>`;
+        
+            // Display YouTube video links
+            const videoContainer = document.getElementById('videoLinks');
+            videos.forEach(video => {
+                const videoItem = document.createElement('div');
+                videoItem.classList.add('video-item');
+                videoItem.innerHTML = `<a href="${video.videoUrl}" target="_blank">${video.title}</a>`;
+                videoContainer.appendChild(videoItem);   
         
             // Extract parameters
             const title = urlParams.get('title') || 'Unknown Title';
@@ -72,10 +100,6 @@
             document.getElementById('songArtist').textContent = artist;
             document.getElementById('songLyrics').textContent = lyrics;
         
-            // Display video
-            const videoPlayer = document.getElementById('videoPlayer');
-            videoPlayer.src = videoUrl || '';
-        
             // Display Spotify link
             const spotifyLinkElement = document.getElementById('spotifyLink');
             if (spotifyLink) {
@@ -84,6 +108,14 @@
             } else {
                 spotifyLinkElement.style.display = 'none';
             }
+
+            // Display YouTube videos
+            const videoContainer = document.getElementById('videoLinks');
+            videos.forEach(video => {
+                const videoItem = document.createElement('div');
+                videoItem.innerHTML = `<a href="${video.videoUrl}" target="_blank">${video.title}</a>`;
+                videoContainer.appendChild(videoItem);
+            });
         
             // Display similar songs
             const similarSongsList = document.getElementById('similarSongsList');
@@ -104,13 +136,16 @@
                 li.appendChild(a);
                 playlistList.appendChild(li);
             });
+        });
 
-            console.log("Title:", title);
+console.log("Title:", title);
 console.log("Artist:", artist);
 console.log("Video URL:", videoUrl);
 console.log("Spotify Link:", spotifyLink);
 console.log("Similar Songs:", similarSongs);
 console.log("Playlists:", playlists);
+console.log('ChatText:', chatText);
+console.log('Videos:', videos);
 
         });
         
