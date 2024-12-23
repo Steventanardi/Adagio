@@ -71,19 +71,50 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Extract and clean the songs (remove existing numbering)
                 const songs = result.chatText.split(/(?=\d+\.)/g).map(song => song.replace(/^\d+\.\s*/, '').trim());
             
-                // Create list items for the songs
-                const listItems = songs.map(song => `<li>${song}</li>`).join('');
+                // Fetch YouTube videos for each song
+                const videoElements = await Promise.all(
+                    songs.map(async song => {
+                        const query = song; // Use the song name as the query
+                        const videoUrl = await fetchYouTubeVideo(query);
+                        return `
+                            <div class="song-item">
+                                <p>${song}</p>
+                                ${videoUrl ? `<iframe width="560" height="315" src="${videoUrl}" frameborder="0" allowfullscreen></iframe>` : '<p>Video not available</p>'}
+                            </div>
+                        `;
+                    })
+                );
             
-                // Display the songs
+                // Display the songs with videos
                 resultContainer.innerHTML = `
                     <div>
                         <h3>ChatGPT's Response:</h3>
-                        <ol style="text-align: left;">${listItems}</ol>
+                        ${videoElements.join('')}
                     </div>
                 `;
             } else {
                 resultContainer.innerHTML = `<p class="error">${result.message || 'No results found.'}</p>`;
             }
+            
+            // Helper function to fetch YouTube video URL
+            async function fetchYouTubeVideo(query) {
+                const apiKey = '[GOOGLE_YOUTUBE_LEAKED]'; // Replace with your YouTube API Key
+                const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&videoEmbeddable=true&key=${apiKey}`;
+            
+                try {
+                    const response = await fetch(searchUrl);
+                    const data = await response.json();
+                    if (data.items && data.items.length > 0) {
+                        const videoId = data.items[0].id.videoId;
+                        return `https://www.youtube.com/embed/${videoId}`;
+                    }
+                } catch (error) {
+                    console.error('Error fetching YouTube video:', error);
+                }
+            
+                return ''; // Return an empty string if no video is found
+            }
+            
             
             
             

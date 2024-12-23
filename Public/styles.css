@@ -451,13 +451,21 @@ button:disabled {
 }
 
 .song-item {
-    padding: 10px;
-    margin: 5px 0;
-    background: #333;
-    color: white;
-    cursor: pointer;
-    border-radius: 5px;
+    margin-bottom: 20px;
 }
+
+.song-item p {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.song-item iframe {
+    margin-top: 10px;
+    width: 100%;
+    max-width: 560px;
+    height: 315px;
+}
+
 
 .song-item:hover {
     background: #555;
