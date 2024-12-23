@@ -450,6 +450,17 @@ button:disabled {
     line-height: 1.5;
 }
 
+.song-item a {
+    display: inline-block;
+    margin-top: 10px;
+    color: #1DB954; /* Spotify green */
+    text-decoration: none;
+    font-weight: bold;
+}
+.song-item a:hover {
+    text-decoration: underline;
+}
+
 .song-item {
     margin-bottom: 20px;
 }

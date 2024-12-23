@@ -72,18 +72,55 @@ const upload = multer({ storage: storage });
 
 // Function to get Spotify access token
 async function getSpotifyAccessToken() {
-    const response = await axios.post(
-        'https://accounts.spotify.com/api/token',
-        new URLSearchParams({ grant_type: 'client_credentials' }),
-        {
-            headers: {
-                Authorization: `Basic ${Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64')}`,
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-        }
-    );
-    return response.data.access_token;
+    try {
+        const response = await axios.post(
+            'https://accounts.spotify.com/api/token',
+            new URLSearchParams({ grant_type: 'client_credentials' }),
+            {
+                headers: {
+                    Authorization: `Basic ${Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64')}`,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+            }
+        );
+        console.log('Spotify Access Token:', response.data.access_token);
+        return response.data.access_token;
+    } catch (error) {
+        console.error('Spotify Token Error:', error.response?.data || error.message);
+        throw new Error('Failed to retrieve Spotify token');
+    }
 }
+
+
+app.post('/fetch-spotify-link', async (req, res) => {
+    const query = req.body.query;
+
+    if (!query) {
+        return res.status(400).json({ success: false, message: 'Query cannot be empty.' });
+    }
+
+    // Extract title and artist from the query
+    const [title, artist] = query.split(' by ');
+
+    if (!title || !artist) {
+        return res.status(400).json({ success: false, message: 'Invalid query format.' });
+    }
+
+    try {
+        const spotifyUrl = await fetchSpotifyTrack(artist.trim(), title.trim());
+        if (spotifyUrl) {
+            res.json({ success: true, spotifyUrl });
+        } else {
+            res.json({ success: false, message: 'No Spotify link found.' });
+        }
+    } catch (error) {
+        console.error('Error in /fetch-spotify-link:', error.message);
+        res.status(500).json({ success: false, message: error.message });
+
+    }
+});
+
+
 
 // Function to fetch YouTube Video URL
 async function fetchYouTubeVideoUrl(artist, title) {

@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Display the songs with videos
                 resultContainer.innerHTML = `
                     <div>
-                        <h3>ChatGPT's Response:</h3>
+                        <h3></h3>
                         ${videoElements.join('')}
                     </div>
                 `;
@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
                 const result = await response.json();
                 if (result.success) {
-                    alert(`ChatGPT Response: ${result.response}`);
+                    alert(` ${result.response}`);
                 } else {
                     alert('Failed to fetch recommendations. Try again!');
                 }
