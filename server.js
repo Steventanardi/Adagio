@@ -49,17 +49,17 @@ const openai = new OpenAI({
 });
 
 // MySQL Database Connection
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'adagio'
-});
+//const db = mysql.createConnection({
+//    host: 'localhost',
+//    user: 'root',
+//    password: '',
+//    database: 'adagio'
+//});
 
-db.connect((err) => {
-    if (err) throw err;
-    console.log('Connected to MySQL Database');
-});
+//db.connect((err) => {
+//    if (err) throw err;
+//    console.log('Connected to MySQL Database');
+//});
 
 // Set up multer for file uploads
 const storage = multer.diskStorage({
@@ -137,6 +137,8 @@ async function fetchYouTubeVideoUrl(artist, title) {
             },
         });
 
+        console.log('YouTube API Response:', response.data); // Log the response
+
         if (response.data.items.length > 0) {
             const videoId = response.data.items[0].id.videoId;
             return `https://www.youtube.com/embed/${videoId}`;
@@ -146,7 +148,6 @@ async function fetchYouTubeVideoUrl(artist, title) {
     }
     return ''; // Return an empty string if no video is found
 }
-
 
 // Function to identify song via AudD
 async function identifySong(filePath) {
@@ -175,49 +176,91 @@ async function identifySong(filePath) {
 
 
 // File upload and song recognition
-app.post('/upload', upload.single('musicFile'), async (req, res) => {
-    if (req.file) {
-        const filePath = req.file.path;
-        const normalizedPath = filePath.replace(/\\/g, '/'); // Normalize Windows path
-        const trimmedPath = `uploads/trimmed-${Date.now()}.mp3`;
-
-        ffmpeg(normalizedPath) // Use normalizedPath here
-            .setStartTime(0)
-            .setDuration(5)
-            .output(trimmedPath)
-            .on('end', async () => {
-                console.log('Audio trimmed successfully.');
-                const result = await identifySong(trimmedPath);
-
-                if (result.success) {
-                    const metadata = result.metadata;
-                    const title = metadata.title;
-                    const artist = metadata.artist || 'Unknown Artist';
-                    const lyrics = await fetchLyrics(artist, title);
-                    const videoUrl = await fetchYouTubeVideoUrl(artist, title);
-
-                    res.json({
-                        success: true,
-                        title,
-                        artist,
-                        lyrics,
-                        videoUrl,
-                    });
-                } else {
-                    res.json({ success: false, message: 'Unable to recognize the song.' });
-                }
-
-                fs.unlink(trimmedPath, () => {}); // Cleanup temporary files
-            })
-            .on('error', (err) => {
-                console.error('Error trimming audio:', err.message);
-                res.status(500).json({ success: false, error: 'Error processing the audio file' });
-            })
-            .run();
-    } else {
-        res.status(400).json({ success: false, message: 'No file uploaded.' });
+app.post('/upload-mic-audio', upload.single('musicFile'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: 'No file uploaded.' });
     }
+
+    const filePath = req.file.path;
+    const trimmedPath = `uploads/trimmed-${Date.now()}.mp3`;
+
+    console.log("Processing microphone audio...");
+
+    // Convert webm to mp3 before processing
+    ffmpeg(filePath)
+        .output(trimmedPath)
+        .on('end', async () => {
+            console.log('Microphone audio converted successfully.');
+            const result = await identifySong(trimmedPath);
+
+            if (result.success) {
+                const metadata = result.metadata;
+                const title = metadata.title;
+                const artist = metadata.artist;
+                const lyrics = await fetchLyrics(artist, title);
+                const videoUrl = await fetchYouTubeVideoUrl(artist, title);
+
+                res.json({
+                    success: true,
+                    title,
+                    artist,
+                    lyrics,
+                    videoUrl,
+                });
+            } else {
+                res.json({ success: false, message: 'Unable to recognize the song.' });
+            }
+
+            fs.unlink(trimmedPath, () => {});
+        })
+        .on('error', (err) => {
+            console.error('Error processing microphone audio:', err.message);
+            res.status(500).json({ success: false, message: 'Error processing the audio file.' });
+        })
+        .run();
 });
+
+app.post('/upload', upload.single('musicFile'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: 'No file uploaded.' });
+    }
+
+    const filePath = req.file.path;
+    const trimmedPath = `uploads/trimmed-${Date.now()}.mp3`;
+
+    ffmpeg(filePath)
+        .output(trimmedPath)
+        .on('end', async () => {
+            console.log('Audio trimmed successfully.');
+            const result = await identifySong(trimmedPath);
+
+            if (result.success) {
+                const metadata = result.metadata;
+                const title = metadata.title;
+                const artist = metadata.artist;
+                const lyrics = await fetchLyrics(artist, title);
+                const videoUrl = await fetchYouTubeVideoUrl(artist, title);
+
+                res.json({
+                    success: true,
+                    title,
+                    artist,
+                    lyrics,
+                    videoUrl
+                });
+            } else {
+                res.json({ success: false, message: 'Unable to recognize the song.' });
+            }
+
+            fs.unlink(trimmedPath, () => {}); // Cleanup
+        })
+        .on('error', (err) => {
+            console.error('Error processing audio:', err);
+            res.status(500).json({ success: false, message: 'Error processing the audio file.' });
+        })
+        .run();
+});
+
 
 // Intelligent Search Endpoint
 app.post('/intelligent-search', async (req, res) => {
@@ -320,33 +363,26 @@ app.post('/upload', upload.single('musicFile'), async (req, res) => {
     const filePath = req.file.path;
     const trimmedPath = `uploads/trimmed-${Date.now()}.mp3`;
 
+    // Convert webm to mp3 before processing
     ffmpeg(filePath)
-        .setStartTime(0)
-        .setDuration(5)
         .output(trimmedPath)
         .on('end', async () => {
+            console.log('Microphone audio converted successfully.');
             const result = await identifySong(trimmedPath);
 
             if (result.success) {
                 const metadata = result.metadata;
                 const title = metadata.title;
                 const artist = metadata.artist;
-
-                // Fetch additional data
                 const lyrics = await fetchLyrics(artist, title);
                 const videoUrl = await fetchYouTubeVideoUrl(artist, title);
-                const spotifyDetails = await fetchSpotifyDetails(artist, title);
-                const similarSongs = await fetchRecommendedSongs(artist, title);
 
                 res.json({
                     success: true,
                     title,
                     artist,
-                    lyrics: lyrics || 'Lyrics not available',
-                    videoUrl: videoUrl || '',
-                    spotifyLink: spotifyDetails.spotifyLink || '',
-                    playlists: spotifyDetails.playlists || [],
-                    similarSongs: similarSongs || [],
+                    lyrics,
+                    videoUrl,
                 });
             } else {
                 res.json({ success: false, message: 'Unable to recognize the song.' });
@@ -355,11 +391,13 @@ app.post('/upload', upload.single('musicFile'), async (req, res) => {
             fs.unlink(trimmedPath, () => {});
         })
         .on('error', (err) => {
-            console.error('Error processing audio:', err);
+            console.error('Error processing microphone audio:', err.message);
             res.status(500).json({ success: false, message: 'Error processing the audio file.' });
         })
         .run();
 });
+
+
 // Registration Endpoint
 app.post('/signup', async (req, res) => {
     const { email, password, full_name } = req.body;
@@ -432,6 +470,44 @@ app.post('/signin', (req, res) => {
 app.post('/upload', async (req, res) => {
     // Route logic calling fetchLyrics here
 });
+
+app.post('/recognize-indevice-audio', upload.single('musicFile'), async (req, res) => {
+    if (!req.file) {
+        console.error("❌ No file uploaded.");
+        return res.status(400).json({ success: false, message: 'No file uploaded.' });
+    }
+
+    console.log("✅ Audio file received:", req.file.path);
+    const filePath = req.file.path;
+    const trimmedPath = `uploads/trimmed-${Date.now()}.mp3`;
+
+    ffmpeg(filePath)
+        .output(trimmedPath)
+        .on('end', async () => {
+            console.log('✅ Audio converted successfully.');
+            const result = await identifySong(trimmedPath);
+
+            if (result.success) {
+                console.log("✅ Song recognized:", result.metadata.title, "by", result.metadata.artist);
+                res.json({
+                    success: true,
+                    title: result.metadata.title,
+                    artist: result.metadata.artist,
+                    videoUrl: await fetchYouTubeVideoUrl(result.metadata.artist, result.metadata.title),
+                });
+            } else {
+                console.error("❌ Failed to recognize song.");
+                res.json({ success: false, message: 'Unable to recognize the song.' });
+            }
+        })
+        .on('error', (err) => {
+            console.error('❌ Error processing in-device audio:', err.message);
+            res.status(500).json({ success: false, message: 'Error processing the audio file.' });
+        })
+        .run();
+});
+
+
 
 
 app.listen(PORT, () => {

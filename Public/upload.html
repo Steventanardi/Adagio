@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Include Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <title>Music Recognition App</title>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">A.</div>
+        <a href="index.html"><i class="fas fa-home icon"></i></a>
+        <a href="signin.html"><i class="fas fa-user icon"></i></a>
+        <a href="microphone.html"><i class="fa-solid fa-microphone"></i></a>
+        <a href="indevice.html"><i class="fas fa-laptop"></i></a>
+        <a href="upload.html"><i class="fas fa-upload"></i></a>
+        <a href="#"><i class="fas fa-cog icon"></i></a>
+        <div class="spacer"></div>
+        <a href="#"><i class="fas fa-sign-out-alt icon"></i></a>
+    </div> 
+
+    <div class="container">
+        <h2>Upload File for Music Recognition</h2>
+        <form id="uploadForm">
+            <input type="file" id="musicInput" name="musicFile" accept="audio/*" required>
+            <button type="button" id="uploadButton">Identify Song</button>
+        </form>
+
+        <div id="uploadResult" class="result-box hidden">
+            <p><strong>Title:</strong> <span id="songTitle"></span></p>
+            <p><strong>Artist:</strong> <span id="songArtist"></span></p>
+            <h4>Lyrics</h4>
+            <pre id="songLyrics" class="song-lyrics"></pre>
+            <h4>Music Video</h4>
+            <div id="videoPlayerContainer">
+                <iframe id="videoPlayer" width="560" height="315" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

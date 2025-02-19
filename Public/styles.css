@@ -28,10 +28,21 @@ header {
     border-radius: 8px;
 }
 
+.result-container {
+    max-height: 300px; /* Adjust this height as needed */
+    overflow-y: auto; /* Enables vertical scrolling */
+    border: 0px solid #ccc; /* Optional: adds a subtle border */
+    padding: 10px;
+    background-color: #f9f9f9; /* Light background */
+    border-radius: 0px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+
 #intelligentSearchButton {
     padding: 10px 20px;
     font-size: 16px;
-    background-color: #007bff;
+    background-color: #1b0ce9;
     color: white;
     border: none;
     border-radius: 8px;
@@ -41,36 +52,6 @@ header {
 
 #intelligentSearchButton:hover {
     background-color: #0056b3;
-}
-
-.recommendation-container {
-    background-color: #f9f9f9;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    margin: 20px 0;
-    text-align: center;
-}
-
-.music-info {
-    margin: 20px 0;
-}
-
-.music-info h3 {
-    font-size: 1.5rem;
-    margin-bottom: 10px;
-    color: #007bff;
-}
-
-.music-info p {
-    font-size: 1rem;
-    margin-bottom: 20px;
-    color: #333;
-}
-
-audio {
-    width: 100%;
-    margin-bottom: 20px;
 }
 
 .video-iframe {
@@ -93,18 +74,6 @@ audio {
 
 .video-item a:hover {
     color: #0056b3;
-}
-
-footer {
-    width: 100%; /* Make the footer full width */
-    text-align: center;
-    padding: 20px 0; /* Adjust padding as needed */
-    background-color: #171717;
-    box-sizing: border-box; /* Include padding in width calculation */
-    position: relative; /* Optional: adjust if you want to keep it at the bottom */
-    left: 0; /* Align to the far left */
-    right: 0; /* Align to the far right */
-    bottom: 0; /* Stick to the bottom */
 }
 
 .result-container {
@@ -1196,67 +1165,5 @@ body, html {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Sound Wave Animation */
-.sound-wave {
-    display: none; /* Initially hidden */
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem; /* Increased gap for larger bars */
-    width: 8rem; /* Increase width for larger wave */
-    height: 5rem; /* Increase height for larger wave */
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
 
-.sound-wave div {
-    width: 1rem; /* Increase width of each bar */
-    height: 0.8rem; /* Increase height of each bar */
-    border-radius: 0.5rem;
-    background: orange;
-    animation: audio-wave 2.2s infinite ease-in-out;
-}
-
-.sound-wave div:nth-child(2) {
-    animation-delay: 0.2s;
-}
-
-.sound-wave div:nth-child(3) {
-    animation-delay: 0.4s;
-}
-
-.sound-wave div:nth-child(4) {
-    animation-delay: 0.6s;
-}
-
-.sound-wave div:nth-child(5) {
-    animation-delay: 0.8s;
-}
-
-@keyframes audio-wave {
-    0% {
-        height: 6px;
-        transform: translateY(0px);
-        background: #ff8e3a;
-    }
-
-    25% {
-        height: 40px;
-        transform: translateY(-5px) scaleY(1.7);
-        background: #ed509e;
-    }
-
-    50% {
-        height: 6px;
-        transform: translateY(0px);
-        background: #9c73f8;
-    }
-
-    100% {
-        height: 6px;
-        transform: translateY(0px);
-        background: #0fccce;
-    }
-}
 
