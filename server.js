@@ -38,7 +38,7 @@ const SPOTIFY_CLIENT_ID = '[SPOTIFY_ID_LEAKED]';
 const SPOTIFY_CLIENT_SECRET = '[SPOTIFY_SECRET_LEAKED]';
 
 // Genius API setup
-const GENIUS_API_KEY = 'gJSMSZpK06fIm8g-pjIoDieHcWL85vzqcGf6P2EAiEdDjDBrSGuwaHkJf0t20aDK';
+const GENIUS_API_KEY = '[GENIUS_LEAKED]';
 
 // YouTube API Key
 const YOUTUBE_API_KEY = '[GOOGLE_YOUTUBE_LEAKED]';
@@ -247,15 +247,29 @@ async function identifySong(filePath) {
         const auddResponse = await axios.post('https://api.audd.io/', formData, {
             headers: formData.getHeaders(),
         });
+        
+        console.log("AudD Response:", auddResponse.data);
+        
+        // after getting metadata from AudD
+const result = auddResponse.data.result;
+if (result) {
+    // fetch lyrics
+    const lyrics = await fetchLyrics(result.artist, result.title);
 
-        console.log("AudD Response:", auddResponse.data); // Log API response
-        if (auddResponse.data && auddResponse.data.result) {
-            return {
-                success: true,
-                service: 'AudD',
-                metadata: auddResponse.data.result,
-            };
+    return {
+        success: true,
+        metadata: {
+            title: result.title,
+            artist: result.artist,
+            album: result.album || '',
+            release_date: result.release_date || '',
+            label: result.label || '',
+            song_link: result.song_link || '',
+            lyrics: lyrics || '',
+            videoUrl: '' // this will be fetched later in the route
         }
+    };
+}
     } catch (error) {
         console.error('AudD error:', error);
     }
@@ -284,10 +298,18 @@ app.post('/upload-mic-audio', upload.single('musicFile'), async (req, res) => {
             if (result.success) {
                 res.json({
                     success: true,
-                    title: result.metadata.title,
-                    artist: result.metadata.artist,
-                    videoUrl: await fetchYouTubeVideoUrl(result.metadata.artist, result.metadata.title)
+                    metadata: {
+                        title: result.metadata.title,
+                        artist: result.metadata.artist,
+                        album: result.metadata.album || '',
+                        release_date: result.metadata.release_date || '',
+                        label: result.metadata.label || '',
+                        song_link: result.metadata.song_link || '',
+                        lyrics: result.metadata.lyrics || '',
+                        videoUrl: result.metadata.videoUrl || await fetchYouTubeVideoUrl(result.metadata.artist, result.metadata.title)
+                    }
                 });
+                
             } else {
                 res.json({ success: false, message: 'Unable to recognize the song. Try singing clearly.' });
             }
@@ -372,6 +394,12 @@ app.post('/intelligent-search', async (req, res) => {
     }
 });
 
+function showTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.getElementById(tabName + 'Tab').classList.add('active');
+}
 
 
 async function fetchSpotifyTrack(artist, title) {
@@ -434,42 +462,6 @@ async function fetchSpotifyDetails(artist, title) {
     }
 }
 
-// Modified upload route to include Spotify details and recommendations
-app.post('/upload', upload.single('musicFile'), async (req, res) => {
-    if (!req.file) {
-        console.error("❌ No file uploaded.");
-        return res.status(400).json({ success: false, message: 'No file uploaded.' });
-    }
-
-    console.log("✅ Audio file received:", req.file.path);
-    const filePath = req.file.path;
-    const trimmedPath = `uploads/trimmed-${Date.now()}.mp3`;
-
-    ffmpeg(filePath)
-        .output(trimmedPath)
-        .on('end', async () => {
-            console.log('✅ Audio trimmed successfully.');
-            const result = await identifySong(trimmedPath);
-
-            if (result.success) {
-                res.json({
-                    success: true,
-                    title: result.metadata.title,
-                    artist: result.metadata.artist,
-                    videoUrl: await fetchYouTubeVideoUrl(result.metadata.artist, result.metadata.title)
-                });
-            } else {
-                res.json({ success: false, message: 'Unable to recognize the song.' });
-            }
-        })
-        .on('error', (err) => {
-            console.error('❌ Error processing audio:', err);
-            res.status(500).json({ success: false, message: 'Error processing the audio file.' });
-        })
-        .run();
-});
-
-
 
 // Registration Endpoint
 app.post('/signup', async (req, res) => {
@@ -490,7 +482,7 @@ app.post('/signup', async (req, res) => {
 async function fetchLyrics(artist, title) {
     console.log(`🎼 Searching lyrics for: ${artist} - ${title}`);
 
-    const apiKey = 'gJSMSZpK06fIm8g-pjIoDieHcWL85vzqcGf6P2EAiEdDjDBrSGuwaHkJf0t20aDK'; // Replace with your Genius API Key
+    const apiKey = '[GENIUS_LEAKED]'; // replace with your valid key
     const searchQuery = encodeURIComponent(`${artist} ${title}`);
     const url = `https://api.genius.com/search?q=${searchQuery}`;
 
@@ -501,18 +493,35 @@ async function fetchLyrics(artist, title) {
 
         const data = await response.json();
 
-        if (data.response.hits.length > 0) {
-            const lyricsUrl = data.response.hits[0].result.url;
-            console.log("🎼 Lyrics Found:", lyricsUrl);
-            return lyricsUrl;
+        // Check for response object and hits
+        if (!data.response || !data.response.hits || data.response.hits.length === 0) {
+            console.warn("⚠️ No lyrics hits found for:", artist, "-", title);
+            return null;
         }
-    } catch (error) {
-        console.error("❌ Error fetching lyrics:", error);
+
+        const lyricsPageUrl = data.response.hits[0].result.url;
+        console.log("🔗 Genius lyrics URL:", lyricsPageUrl);
+
+        // Scrape full lyrics
+        const html = await fetch(lyricsPageUrl).then(res => res.text());
+        const $ = cheerio.load(html);
+
+        let lyrics = '';
+        $('[data-lyrics-container]').each((_, el) => {
+            lyrics += $(el).text().trim() + '\n\n';
+        });
+
+        if (!lyrics.trim()) {
+            lyrics = $('.lyrics').text().trim(); // fallback
+        }
+
+        return lyrics || null;
+
+    } catch (err) {
+        console.error("❌ Error fetching lyrics:", err.message);
+        return null;
     }
-
-    return null; // No lyrics found
 }
-
 
 
 // Login Endpoint
@@ -553,15 +562,24 @@ app.post('/recognize-indevice-audio', upload.single('musicFile'), async (req, re
             console.log('✅ Audio converted successfully.');
             const result = await identifySong(trimmedPath);
 
-            if (result.success) {
-                console.log("✅ Song recognized:", result.metadata.title, "by", result.metadata.artist);
+            if (result && result.success) {
+                const data = result.metadata;
+            
                 res.json({
                     success: true,
-                    title: result.metadata.title,
-                    artist: result.metadata.artist,
-                    videoUrl: await fetchYouTubeVideoUrl(result.metadata.artist, result.metadata.title),
+                    metadata: {
+                        title: data.title,
+                        artist: data.artist,
+                        album: data.album,
+                        release_date: data.release_date,
+                        label: data.label,
+                        song_link: data.song_link,
+                        lyrics: data.lyrics,
+                        videoUrl: await fetchYouTubeVideoUrl(data.artist, data.title)
+                    }
                 });
-            } else {
+            }
+                         else {
                 console.error("❌ Failed to recognize song.");
                 res.json({ success: false, message: 'Unable to recognize the song.' });
             }

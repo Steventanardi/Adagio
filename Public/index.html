@@ -24,24 +24,18 @@
     </div>    
     <div class="hero">
         <div class="intro-container">
-            <!-- Greeting -->
-            <div class="greeting">
-                <h1>Hi I'm Adagio,</h1>
-                <h2>Ask me any Music or Songs!</h2>
-            </div>
-    
-            <!-- Search Bar -->
+            <h1>Hi I'm Adagio,</h1>
+            <h2>Ask me any Music or Songs!</h2>
             <div class="search-container">
-                <input id="searchInput" type="text" placeholder="Enter your query..." />
-                <button id="intelligentSearchButton" class="search-btn">Search</button>
+              <input id="searchInput" ... />
+              <ul id="searchHistory" class="search-history"></ul>
+              <button id="intelligentSearchButton">Search</button>
             </div>
-            
-            <!-- Container to display results -->
-            <div id="resultContainer" class="result-container"></div>
-            
-            
         </div>
-    </div>    
+          
+        <div id="resultContainer" class="result-container"></div> 
+    </div>
+      
 
     <script>
         function redirectToHome() {

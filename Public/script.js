@@ -95,16 +95,23 @@ document.addEventListener('DOMContentLoaded', function () {
                     .map(song => song.replace(/^\d+\.\s*/, '').trim())
                     .filter(song => song); // Filter out empty entries
     
-                const videoElements = await Promise.all(
-                    songs.map(async song => {
-                        const videoUrl = await fetchYouTubeVideo(song);
-                        return `
+                    const videoElements = await Promise.all(
+                        songs.map(async (songText) => {
+                          const videoUrl = await fetchYouTubeVideo(songText);
+                          return `
                             <div class="song-item">
-                                <p>${song}</p>
-                                ${videoUrl ? `<iframe width="560" height="315" src="${videoUrl}" frameborder="0" allowfullscreen></iframe>` : '<p>Video not available</p>'}
-                            </div>`;
-                    })
-                );
+                              ${videoUrl ? `
+                                <div class="video-container">
+                                  <iframe src="${convertToEmbedUrl(videoUrl)}" frameborder="0" allowfullscreen></iframe>
+                                </div>` : '<p>Video not available</p>'
+                              }
+                              <p>"${songText}"</p>
+                            </div>
+                          `;
+                        })
+                      );
+                      
+                                      
     
                 resultContainer.innerHTML = `
                     <div>
@@ -119,6 +126,15 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Error fetching search results:', error);
             resultContainer.innerHTML = '<p class="error">An error occurred. Please try again later.</p>';
         }
+        // Update search history
+const historyList = document.getElementById('searchHistory');
+const li = document.createElement('li');
+li.textContent = query;
+li.onclick = () => {
+    document.getElementById('searchInput').value = li.textContent;
+};
+historyList.prepend(li);
+
     });
     
     console.log('Query:', query);
@@ -257,21 +273,10 @@ document.addEventListener('DOMContentLoaded', function () {
                             const result = await response.json();
 
                             if (result.success) {
-                                liveResultMic.innerHTML = `
-    <h3>Live Song Recognized</h3>
-    <p><strong>Song:</strong> ${result.title}</p>
-    <p><strong>Artist:</strong> ${result.artist}</p>
-
-    ${result.videoUrl ? `
-        <div class="video-container">
-            <iframe src="${convertToEmbedUrl(result.videoUrl)}" frameborder="0" allowfullscreen></iframe>
-        </div>` : '<p class="error">No YouTube MV found.</p>'}    
-
-    ${result.lyrics ? `
-        <p><strong>Lyrics:</strong> <a href="${result.lyrics}" target="_blank">View Lyrics</a></p>
-    ` : '<p class="error">Lyrics not available.</p>'}
-`;
-
+                                const data = result.metadata || result;
+                            
+                                renderSongResult(data, liveResultMic);
+;
                             } else {
                                 liveResultMic.innerHTML = `<p class="error">Failed to recognize song.</p>`;
                             }
@@ -312,9 +317,66 @@ document.addEventListener('DOMContentLoaded', function () {
                     mediaRecorder.stop();
                     console.log("Recording manually stopped.");
                 }
+                
             }
         });
     }
+});
+// --- Lyrics Interaction Helpers ---
+
+function toggleLyrics() {
+    const el = document.getElementById("lyricsContent");
+    if (!el) return;
+
+    el.classList.toggle('open');
+    if (el.classList.contains('open')) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+    }
+}
+
+function copyLyrics() {
+    const text = document.getElementById("lyricsText")?.innerText;
+    if (text) {
+        navigator.clipboard.writeText(text).then(() => alert("Lyrics copied!"));
+    }
+}
+
+function downloadLyrics(filename = "lyrics") {
+    const text = document.getElementById("lyricsText")?.innerText;
+    if (text) {
+        const blob = new Blob([text], { type: "text/plain" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${filename}.txt`;
+        link.click();
+    }
+}
+
+
+
+function copyLyrics() {
+    const lyrics = document.getElementById("lyricsText")?.innerText;
+    if (lyrics) {
+        navigator.clipboard.writeText(lyrics)
+            .then(() => alert("✅ Lyrics copied to clipboard!"))
+            .catch(err => alert("❌ Failed to copy lyrics"));
+    }
+}
+
+function downloadLyrics(filename = "lyrics") {
+    const lyrics = document.getElementById("lyricsText")?.innerText;
+    if (lyrics) {
+        const blob = new Blob([lyrics], { type: "text/plain" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${filename}.txt`;
+        link.click();
+    }
+}
+
+
+document.getElementById('darkModeToggle')?.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
 });
 
 
@@ -376,19 +438,16 @@ document.addEventListener('DOMContentLoaded', async function () {
 
                     try {
                         const response = await fetch('/recognize-indevice-audio', { method: 'POST', body: formData });
+                    
+                        if (!response.ok) {
+                            throw new Error(`Server returned ${response.status}`);
+                        }
+                    
                         const result = await response.json();
-
+                        const data = result.metadata || result;
+                    
                         if (result.success) {
-                            recognitionResult.innerHTML = `
-                                <h3>Song Recognized</h3>
-                                <p><strong>Song:</strong> ${result.title}</p>
-                                <p><strong>Artist:</strong> ${result.artist}</p>
-                                ${result.videoUrl ? `
-                                    <div class="video-container">
-                                        <iframe src="${convertToEmbedUrl(result.videoUrl)}" frameborder="0" allowfullscreen></iframe>
-                                    </div>
-                                ` : ''}
-                                                            `;
+                            renderSongResult(data, recognitionResult);
                         } else {
                             recognitionResult.innerHTML = `<p class="error">Failed to recognize song.</p>`;
                         }
@@ -396,6 +455,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                         console.error('❌ Error uploading audio:', error);
                         recognitionResult.innerHTML = `<p class="error">Upload failed.</p>`;
                     }
+                    
 
                     // Stop everything after getting result
                     resetUI();
@@ -533,16 +593,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
                 if (result.success) {
-                    uploadResult.innerHTML = uploadResult.innerHTML = `
-                    <h3>Song Recognized</h3>
-                    <p><strong>Song:</strong> ${result.title}</p>
-                    <p><strong>Artist:</strong> ${result.artist}</p>
-                    ${result.videoUrl ? `
-                        <div class="video-container">
-                            <iframe src="${convertToEmbedUrl(result.videoUrl)}" frameborder="0" allowfullscreen></iframe>
-                        </div>` : '<p class="error">No YouTube MV found.</p>'}
-                `;
-                
+                    renderSongResult(result, uploadResult);
                 } else {
                     uploadResult.innerHTML = `<p class="error">Failed to recognize song. Try again.</p>`;
                 }
@@ -553,5 +604,34 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+function renderSongResult(data, targetElement) {
+    if (!data || !targetElement) return;
+
+    targetElement.innerHTML = `
+        <h3>🎵 Song Recognized</h3>
+        <p><strong>Title:</strong> ${data.title}</p>
+        <p><strong>Artist:</strong> ${data.artist}</p>
+        ${data.album ? `<p><strong>Album:</strong> ${data.album}</p>` : ''}
+        ${data.release_date ? `<p><strong>Release Date:</strong> ${data.release_date}</p>` : ''}
+        ${data.label ? `<p><strong>Label:</strong> ${data.label}</p>` : ''}
+        ${data.song_link ? `<p><strong>Song Link:</strong> <a href="${data.song_link}" target="_blank">Listen</a></p>` : ''}
+
+        ${data.videoUrl ? `
+            <div class="video-container">
+                <iframe src="${convertToEmbedUrl(data.videoUrl)}" frameborder="0" allowfullscreen></iframe>
+            </div>` : '<p class="error">No YouTube MV found.</p>'}
+
+        ${data.lyrics ? `
+            <div class="lyrics-section">
+                <h4 style="cursor:pointer;" onclick="toggleLyrics()">📜 Lyrics (Click to Expand/Collapse)</h4>
+                <div id="lyricsContent" class="">
+                    <pre class="song-lyrics" id="lyricsText">${data.lyrics}</pre>
+                    <button onclick="copyLyrics()">📋 Copy</button>
+                    <button onclick="downloadLyrics('${data.title.replace(/'/g, '')}')">💾 Save as .txt</button>
+                </div>
+            </div>` : '<p class="error">Lyrics not available.</p>'}
+    `;
+}
 
 
