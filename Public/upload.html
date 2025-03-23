@@ -24,11 +24,25 @@
     </div> 
 
     <div class="container">
-        <h2>Upload File for Music Recognition</h2>
-        <form id="uploadForm">
-            <input type="file" id="musicInput" name="musicFile" accept="audio/*" required>
-            <button type="button" id="uploadButton">Identify Song</button>
-        </form>
+        <div class="upload-container">
+            <h2>Upload File for Music Recognition</h2>
+            
+            <label for="musicInput" class="custom-file-upload">
+                <i class="fas fa-cloud-upload-alt"></i> Choose File
+            </label>
+            <input type="file" id="musicInput" name="musicFile" accept="audio/*" required hidden>
+        
+            <span id="fileName">No file chosen</span>
+        
+            <button type="button" id="uploadButton" class="upload-btn">
+                <i class="fas fa-music"></i> Identify Song
+            </button>
+        
+            <div id="uploadResult" class="result-box hidden">
+                <p>Waiting for recognition...</p>
+            </div>
+        </div>
+        
 
         <div id="uploadResult" class="result-box hidden">
             <p><strong>Title:</strong> <span id="songTitle"></span></p>

@@ -23,10 +23,22 @@
     </div> 
 
     <div class="container">
-        <h2>InDevice Music Recognition</h2>
-        <button id="startRecognition">Start Recognition</button>
-        <button id="stopRecognition" disabled>Stop Recognition</button>
-        <div id="recognitionResult"></div>
+        <h2>In-Device Music Recognition</h2>
+
+<button id="startRecognition">
+    <i class="fas fa-headphones"></i> Start Recognition
+</button>
+
+<button id="stopRecognition" disabled>
+    <i class="fas fa-stop-circle"></i> Stop Recognition
+</button>
+
+<p id="recognitionStatus">Click to start capturing system audio.</p>
+
+<div id="recognitionResult" class="result-container">
+    <p>Waiting for recognition...</p>
+</div>
+
     </div>
 
     <script src="script.js"></script>

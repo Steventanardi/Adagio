@@ -12,14 +12,18 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 const { OpenAI } = require('openai');
+const fetch = require('node-fetch');
+
 require('dotenv').config();
+global.fetch = require('node-fetch');
+
 
 const app = express();
 const PORT = 3000;
 const JWT_SECRET = 'your_jwt_secret_key';
 
 // Set up AcrCloud config
-const acr = new AcrCloud({
+const acrClient = new AcrCloud({
     host: 'identify-ap-southeast-1.acrcloud.com',
     access_key: '[ACR_KEY_LEAKED]',
     access_secret: '[ACR_SECRET_LEAKED]'
@@ -27,6 +31,7 @@ const acr = new AcrCloud({
 
 // Set up AudD API Key
 const AUDD_API_KEY = '[AUDD_LEAKED]';
+
 
 // Spotify API credentials
 const SPOTIFY_CLIENT_ID = '[SPOTIFY_ID_LEAKED]';
@@ -92,6 +97,91 @@ async function getSpotifyAccessToken() {
 }
 
 
+async function recognizeMusic(filePath) {
+    console.log("🎵 Sending to AudD for recognition...");
+
+    let formData = new FormData();
+    formData.append('api_token', '[AUDD_LEAKED]');
+    formData.append('file', fs.createReadStream(filePath));
+    formData.append('return', 'spotify,youtube');
+
+    try {
+        let response = await fetch('https://api.audd.io/', { method: 'POST', body: formData });
+        let result = await response.json();
+
+        if (result.status === 'success' && result.result) {
+            console.log("✅ Recognized by AudD:", result.result.title, "by", result.result.artist);
+            const videoUrl = result.result.youtube ? result.result.youtube.url : await fetchYouTubeVideoUrl(result.result.artist, result.result.title);
+            const lyrics = result.result.lyrics || await fetchLyrics(result.result.artist, result.result.title);
+
+            return {
+                success: true,
+                title: result.result.title,
+                artist: result.result.artist,
+                videoUrl,
+                lyrics
+            };
+        }
+    } catch (error) {
+        console.error("❌ AudD API Error:", error);
+    }
+
+    // ❌ AudD failed, try AcrCloud
+    console.log("❌ AudD failed, trying AcrCloud...");
+
+    try {
+        const acrResult = await acrClient.identify(fs.readFileSync(filePath));
+
+        console.log("🔍 AcrCloud Full Response:", JSON.stringify(acrResult, null, 2));
+
+        if (!acrResult || !acrResult.metadata || !acrResult.metadata.music) {
+            console.error("❌ AcrCloud response is missing metadata.");
+            return { success: false, message: "AcrCloud returned no valid data." };
+        }
+
+        if (acrResult.metadata.music.length === 0) {
+            console.error("❌ AcrCloud found no matching songs.");
+            return { success: false, message: "No match found in AcrCloud." };
+        }
+
+        const song = acrResult.metadata.music[0];
+        console.log("✅ Recognized by AcrCloud:", song.title, "by", song.artists[0].name);
+
+        const videoUrl = await fetchYouTubeVideoUrl(song.artists[0].name, song.title);
+        const lyrics = await fetchLyrics(song.artists[0].name, song.title);
+
+        return {
+            success: true,
+            title: song.title,
+            artist: song.artists[0].name,
+            videoUrl,
+            lyrics
+        };
+    } catch (err) {
+        console.error("❌ AcrCloud error:", err);
+    }
+
+    // ❌ If both fail
+    console.log("❌ Both AudD and AcrCloud failed to recognize the song.");
+    return { success: false, message: 'Unable to recognize the song.' };
+}
+
+
+
+// Express Route
+app.post('/upload-mic-audio', upload.single('musicFile'), async (req, res) => {
+    if (!req.file) {
+        console.error("❌ No file uploaded.");
+        return res.status(400).json({ success: false, message: 'No audio detected.' });
+    }
+
+    console.log("✅ Live audio received:", req.file.path);
+    const filePath = req.file.path;
+    
+    const result = await recognizeMusic(filePath);
+    res.json(result);
+});
+
 app.post('/fetch-spotify-link', async (req, res) => {
     const query = req.body.query;
 
@@ -124,30 +214,28 @@ app.post('/fetch-spotify-link', async (req, res) => {
 
 // Function to fetch YouTube Video URL
 async function fetchYouTubeVideoUrl(artist, title) {
+    console.log(`🔎 Searching YouTube for: ${artist} - ${title}`);
+
+    const apiKey = '[GOOGLE_YOUTUBE_LEAKED]'; // Replace with your actual YouTube API key
+    const searchQuery = encodeURIComponent(`${artist} ${title} official music video`);
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${searchQuery}&key=${apiKey}&type=video&maxResults=1`;
+
     try {
-        const query = `${artist} ${title} official music video`;
-        const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
-            params: {
-                part: 'snippet',
-                q: query,
-                type: 'video',
-                videoEmbeddable: true,
-                maxResults: 1,
-                key: YOUTUBE_API_KEY,
-            },
-        });
+        const response = await fetch(url);
+        const data = await response.json();
 
-        console.log('YouTube API Response:', response.data); // Log the response
-
-        if (response.data.items.length > 0) {
-            const videoId = response.data.items[0].id.videoId;
-            return `https://www.youtube.com/embed/${videoId}`;
+        if (data.items && data.items.length > 0) {
+            const videoId = data.items[0].id.videoId;
+            console.log("🎥 YouTube MV Found:", `https://www.youtube.com/watch?v=${videoId}`);
+            return `https://www.youtube.com/watch?v=${videoId}`;
         }
     } catch (error) {
-        console.error('YouTube API error:', error.message);
+        console.error("❌ Error fetching YouTube video:", error);
     }
-    return ''; // Return an empty string if no video is found
+
+    return null; // No video found
 }
+
 
 // Function to identify song via AudD
 async function identifySong(filePath) {
@@ -178,47 +266,39 @@ async function identifySong(filePath) {
 // File upload and song recognition
 app.post('/upload-mic-audio', upload.single('musicFile'), async (req, res) => {
     if (!req.file) {
-        return res.status(400).json({ success: false, message: 'No file uploaded.' });
+        console.error("❌ No file uploaded.");
+        return res.status(400).json({ success: false, message: 'No audio detected.' });
     }
 
+    console.log("✅ Live audio received:", req.file.path);
     const filePath = req.file.path;
     const trimmedPath = `uploads/trimmed-${Date.now()}.mp3`;
 
-    console.log("Processing microphone audio...");
-
-    // Convert webm to mp3 before processing
     ffmpeg(filePath)
+        .audioFilters("highpass=f=200, lowpass=f=3000") // Enhancing voice clarity
         .output(trimmedPath)
         .on('end', async () => {
-            console.log('Microphone audio converted successfully.');
+            console.log('✅ Audio cleaned and processed.');
             const result = await identifySong(trimmedPath);
 
             if (result.success) {
-                const metadata = result.metadata;
-                const title = metadata.title;
-                const artist = metadata.artist;
-                const lyrics = await fetchLyrics(artist, title);
-                const videoUrl = await fetchYouTubeVideoUrl(artist, title);
-
                 res.json({
                     success: true,
-                    title,
-                    artist,
-                    lyrics,
-                    videoUrl,
+                    title: result.metadata.title,
+                    artist: result.metadata.artist,
+                    videoUrl: await fetchYouTubeVideoUrl(result.metadata.artist, result.metadata.title)
                 });
             } else {
-                res.json({ success: false, message: 'Unable to recognize the song.' });
+                res.json({ success: false, message: 'Unable to recognize the song. Try singing clearly.' });
             }
-
-            fs.unlink(trimmedPath, () => {});
         })
         .on('error', (err) => {
-            console.error('Error processing microphone audio:', err.message);
-            res.status(500).json({ success: false, message: 'Error processing the audio file.' });
+            console.error('❌ Error processing live singing:', err);
+            res.status(500).json({ success: false, message: 'Error processing live singing.' });
         })
         .run();
 });
+
 
 app.post('/upload', upload.single('musicFile'), async (req, res) => {
     if (!req.file) {
@@ -357,45 +437,38 @@ async function fetchSpotifyDetails(artist, title) {
 // Modified upload route to include Spotify details and recommendations
 app.post('/upload', upload.single('musicFile'), async (req, res) => {
     if (!req.file) {
+        console.error("❌ No file uploaded.");
         return res.status(400).json({ success: false, message: 'No file uploaded.' });
     }
 
+    console.log("✅ Audio file received:", req.file.path);
     const filePath = req.file.path;
     const trimmedPath = `uploads/trimmed-${Date.now()}.mp3`;
 
-    // Convert webm to mp3 before processing
     ffmpeg(filePath)
         .output(trimmedPath)
         .on('end', async () => {
-            console.log('Microphone audio converted successfully.');
+            console.log('✅ Audio trimmed successfully.');
             const result = await identifySong(trimmedPath);
 
             if (result.success) {
-                const metadata = result.metadata;
-                const title = metadata.title;
-                const artist = metadata.artist;
-                const lyrics = await fetchLyrics(artist, title);
-                const videoUrl = await fetchYouTubeVideoUrl(artist, title);
-
                 res.json({
                     success: true,
-                    title,
-                    artist,
-                    lyrics,
-                    videoUrl,
+                    title: result.metadata.title,
+                    artist: result.metadata.artist,
+                    videoUrl: await fetchYouTubeVideoUrl(result.metadata.artist, result.metadata.title)
                 });
             } else {
                 res.json({ success: false, message: 'Unable to recognize the song.' });
             }
-
-            fs.unlink(trimmedPath, () => {});
         })
         .on('error', (err) => {
-            console.error('Error processing microphone audio:', err.message);
+            console.error('❌ Error processing audio:', err);
             res.status(500).json({ success: false, message: 'Error processing the audio file.' });
         })
         .run();
 });
+
 
 
 // Registration Endpoint
@@ -415,38 +488,31 @@ app.post('/signup', async (req, res) => {
 
 // Lyrics Retrieval Function
 async function fetchLyrics(artist, title) {
-    try {
-        const lyricsOvhResponse = await axios.get(`https://api.lyrics.ovh/v1/${artist}/${title}`);
-        if (lyricsOvhResponse.data.lyrics) {
-            return lyricsOvhResponse.data.lyrics.replace(/\n{2,}/g, '\n\n');
-        }
-    } catch (err) {
-        console.error('Lyrics.ovh API error:', err.message);
-    }
+    console.log(`🎼 Searching lyrics for: ${artist} - ${title}`);
 
-    // Fallback to Genius API
+    const apiKey = 'gJSMSZpK06fIm8g-pjIoDieHcWL85vzqcGf6P2EAiEdDjDBrSGuwaHkJf0t20aDK'; // Replace with your Genius API Key
+    const searchQuery = encodeURIComponent(`${artist} ${title}`);
+    const url = `https://api.genius.com/search?q=${searchQuery}`;
+
     try {
-        const searchUrl = `https://api.genius.com/search?q=${encodeURIComponent(artist + ' ' + title)}`;
-        const geniusResponse = await axios.get(searchUrl, {
-            headers: { Authorization: `Bearer ${GENIUS_API_KEY}` }
+        const response = await fetch(url, {
+            headers: { Authorization: `Bearer ${apiKey}` }
         });
 
-        if (geniusResponse.data.response.hits.length > 0) {
-            const songPath = geniusResponse.data.response.hits[0].result.path;
-            const songUrl = `https://genius.com${songPath}`;
+        const data = await response.json();
 
-            const pageResponse = await axios.get(songUrl);
-            const $ = cheerio.load(pageResponse.data);
-            let lyrics = $('.lyrics').text().trim() || $('[data-lyrics-container]').text().trim();
-
-            return lyrics || 'Lyrics not found';
+        if (data.response.hits.length > 0) {
+            const lyricsUrl = data.response.hits[0].result.url;
+            console.log("🎼 Lyrics Found:", lyricsUrl);
+            return lyricsUrl;
         }
-    } catch (err) {
-        console.error('Genius API or scraping error:', err.message);
+    } catch (error) {
+        console.error("❌ Error fetching lyrics:", error);
     }
 
-    return 'Lyrics not found';
+    return null; // No lyrics found
 }
+
 
 
 // Login Endpoint

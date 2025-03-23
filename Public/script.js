@@ -220,104 +220,136 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log("JavaScript Loaded: All event listeners initialized");
 
     const startListeningMicButton = document.getElementById('startListeningMic');
-    const stopListeningMicButton = document.getElementById('stopListeningMic');
     const liveResultMic = document.getElementById('liveResultMic');
+    const micStatus = document.getElementById('micStatus');
 
     let mediaRecorder;
     let audioChunks = [];
+    let isListening = false;
 
     if (startListeningMicButton) {
         startListeningMicButton.addEventListener('click', async function () {
-            try {
-                console.log("Requesting microphone access...");
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            if (!isListening) {
+                try {
+                    console.log("Requesting microphone access...");
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-                audioChunks = [];
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                    audioChunks = [];
 
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) {
-                        audioChunks.push(event.data);
-                    }
-                };
-
-                mediaRecorder.onstop = async () => {
-                    console.log("Recording stopped, preparing audio for upload...");
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-
-                    const formData = new FormData();
-                    formData.append('musicFile', audioBlob, 'micAudio.webm');
-
-                    liveResultMic.innerHTML = `<p>Processing audio...</p>`;
-
-                    try {
-                        const response = await fetch('/upload-mic-audio', { method: 'POST', body: formData });
-                        const result = await response.json();
-
-                        if (result.success) {
-                            liveResultMic.innerHTML = `
-                                <h3>Song Recognized</h3>
-                                <p><strong>Song:</strong> ${result.title}</p>
-                                <p><strong>Artist:</strong> ${result.artist}</p>
-                                ${result.videoUrl ? `<iframe width="560" height="315" src="${result.videoUrl}" frameborder="0" allowfullscreen></iframe>` : ''}
-                            `;
-                        } else {
-                            liveResultMic.innerHTML = `<p class="error">Failed to recognize song.</p>`;
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
                         }
-                    } catch (error) {
-                        console.error('Error uploading audio:', error);
-                        liveResultMic.innerHTML = `<p class="error">Upload failed.</p>`;
-                    }
-                };
+                    };
 
-                mediaRecorder.start();
-                console.log("Recording started...");
-                setTimeout(() => mediaRecorder.state === "recording" && mediaRecorder.stop(), 10000);
+                    mediaRecorder.onstop = async () => {
+                        console.log("Recording stopped, preparing audio for upload...");
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
 
-                startListeningMicButton.disabled = true;
-                stopListeningMicButton.disabled = false;
-            } catch (err) {
-                console.error('Microphone access error:', err);
-                alert('Please allow microphone permissions.');
+                        const formData = new FormData();
+                        formData.append('musicFile', audioBlob, 'micAudio.webm');
+
+                        liveResultMic.innerHTML = `<p>Processing audio...</p>`;
+
+                        try {
+                            const response = await fetch('/upload-mic-audio', { method: 'POST', body: formData });
+                            const result = await response.json();
+
+                            if (result.success) {
+                                liveResultMic.innerHTML = `
+    <h3>Live Song Recognized</h3>
+    <p><strong>Song:</strong> ${result.title}</p>
+    <p><strong>Artist:</strong> ${result.artist}</p>
+
+    ${result.videoUrl ? `
+        <div class="video-container">
+            <iframe src="${convertToEmbedUrl(result.videoUrl)}" frameborder="0" allowfullscreen></iframe>
+        </div>` : '<p class="error">No YouTube MV found.</p>'}    
+
+    ${result.lyrics ? `
+        <p><strong>Lyrics:</strong> <a href="${result.lyrics}" target="_blank">View Lyrics</a></p>
+    ` : '<p class="error">Lyrics not available.</p>'}
+`;
+
+                            } else {
+                                liveResultMic.innerHTML = `<p class="error">Failed to recognize song.</p>`;
+                            }
+                        } catch (error) {
+                            console.error('Error uploading audio:', error);
+                            liveResultMic.innerHTML = `<p class="error">Upload failed.</p>`;
+                        }
+
+                        // Change button color briefly to red, then reset
+                        startListeningMicButton.classList.remove('listening');
+                        startListeningMicButton.classList.add('stopped');
+                        micStatus.textContent = 'Stopped. Click to listen again.';
+                        setTimeout(() => startListeningMicButton.classList.remove('stopped'), 1000);
+
+                        isListening = false;
+                    };
+
+                    mediaRecorder.start();
+                    console.log("Recording started...");
+                    startListeningMicButton.classList.add('listening');
+                    micStatus.textContent = 'Listening... Click again to stop.';
+                    isListening = true;
+
+                    // Auto-stop after 10 seconds
+                    setTimeout(() => {
+                        if (mediaRecorder.state === 'recording') {
+                            mediaRecorder.stop();
+                        }
+                    }, 10000);
+                } catch (err) {
+                    console.error('Microphone access error:', err);
+                    alert('Microphone permission denied. Please check browser settings.');
+                    micStatus.textContent = '❌ Microphone blocked. Allow access in settings.';
+                }
+            } else {
+                // Stop Recording Manually
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                    console.log("Recording manually stopped.");
+                }
             }
-        });
-
-        stopListeningMicButton.addEventListener('click', () => {
-            if (mediaRecorder && mediaRecorder.state === "recording") {
-                mediaRecorder.stop();
-                console.log("Recording manually stopped.");
-            }
-            startListeningMicButton.disabled = false;
-            stopListeningMicButton.disabled = true;
         });
     }
 });
 
-document.addEventListener('DOMContentLoaded', function () {
+
+document.addEventListener('DOMContentLoaded', async function () {
     console.log("JavaScript Loaded: In-Device Music Recognition Ready");
 
     const startRecognitionButton = document.getElementById('startRecognition');
     const stopRecognitionButton = document.getElementById('stopRecognition');
     const recognitionResult = document.getElementById('recognitionResult');
+    const recognitionStatus = document.getElementById('recognitionStatus');
 
     let mediaRecorder;
     let audioChunks = [];
+    let systemAudioStream;
+    let displayStream;
 
     if (startRecognitionButton) {
         startRecognitionButton.addEventListener('click', async function () {
             try {
                 console.log("Requesting system audio access...");
-
-                // Get system audio (Loopback recording)
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    audio: {
-                        echoCancellation: false,
-                        noiseSuppression: false,
-                        sampleRate: 44100
-                    }
+                
+                // Request system audio (forces user to allow screen capture)
+                displayStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: true,  // Necessary to trigger the capture request
+                    audio: true   // Capture system audio
                 });
 
-                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                // Filter audio track (ignore video)
+                const audioTrack = displayStream.getAudioTracks()[0];
+                if (!audioTrack) throw new Error("No system audio track found.");
+
+                systemAudioStream = new MediaStream([audioTrack]);
+
+                // Create MediaRecorder to capture system sound
+                mediaRecorder = new MediaRecorder(systemAudioStream, { mimeType: 'audio/webm' });
                 audioChunks = [];
 
                 mediaRecorder.ondataavailable = (event) => {
@@ -327,104 +359,199 @@ document.addEventListener('DOMContentLoaded', function () {
                 };
 
                 mediaRecorder.onstop = async () => {
-                    console.log("🎤 Recording stopped, checking audio...");
+                    console.log("🎧 System audio recording stopped.");
                     
                     if (audioChunks.length === 0) {
                         console.error("❌ No audio recorded.");
-                        recognitionResult.innerHTML = `<p class="error">No audio recorded. Try again.</p>`;
+                        recognitionResult.innerHTML = `<p class="error">No system audio detected. Try again.</p>`;
+                        resetUI();
                         return;
                     }
-                
-                    console.log("✅ Audio recorded:", audioChunks.length, "chunks.");
-                
+
                     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                     const formData = new FormData();
                     formData.append('musicFile', audioBlob, 'indeviceAudio.webm');
-                
+
                     recognitionResult.innerHTML = `<p>Processing audio...</p>`;
-                
+
                     try {
                         const response = await fetch('/recognize-indevice-audio', { method: 'POST', body: formData });
                         const result = await response.json();
-                
-                        recognitionResult.innerHTML = result.success
-                            ? `<h3>Song Recognized</h3>
-                               <p><strong>Song:</strong> ${result.title}</p>
-                               <p><strong>Artist:</strong> ${result.artist}</p>
-                               ${result.videoUrl ? `<iframe width="560" height="315" src="${result.videoUrl}" frameborder="0" allowfullscreen></iframe>` : ''}`
-                            : `<p class="error">Failed to recognize song.</p>`;
+
+                        if (result.success) {
+                            recognitionResult.innerHTML = `
+                                <h3>Song Recognized</h3>
+                                <p><strong>Song:</strong> ${result.title}</p>
+                                <p><strong>Artist:</strong> ${result.artist}</p>
+                                ${result.videoUrl ? `
+                                    <div class="video-container">
+                                        <iframe src="${convertToEmbedUrl(result.videoUrl)}" frameborder="0" allowfullscreen></iframe>
+                                    </div>
+                                ` : ''}
+                                                            `;
+                        } else {
+                            recognitionResult.innerHTML = `<p class="error">Failed to recognize song.</p>`;
+                        }
                     } catch (error) {
                         console.error('❌ Error uploading audio:', error);
                         recognitionResult.innerHTML = `<p class="error">Upload failed.</p>`;
                     }
+
+                    // Stop everything after getting result
+                    resetUI();
                 };
-                
 
+                // Start recording system audio
                 mediaRecorder.start();
-                console.log("Recording started...");
-                setTimeout(() => mediaRecorder.state === "recording" && mediaRecorder.stop(), 10000);
-
+                console.log("🎧 Recording system audio started...");
+                startRecognitionButton.classList.add('listening');
+                recognitionStatus.textContent = 'Capturing system audio... Processing will auto-stop.';
                 startRecognitionButton.disabled = true;
                 stopRecognitionButton.disabled = false;
+
+                // Auto-stop after 10 seconds if no result is returned before
+                setTimeout(() => {
+                    if (mediaRecorder.state === "recording") {
+                        mediaRecorder.stop();
+                    }
+                }, 10000);
             } catch (err) {
-                console.error('Error accessing system audio:', err);
-                alert('Please allow microphone permissions for system audio.');
+                console.error('❌ Error accessing system audio:', err);
+                alert('System audio access requires screen recording permission. Please allow it.');
+                recognitionStatus.textContent = '❌ System audio not accessible. Allow screen recording.';
             }
         });
 
         stopRecognitionButton.addEventListener('click', () => {
             if (mediaRecorder && mediaRecorder.state === "recording") {
                 mediaRecorder.stop();
-                console.log("Recording manually stopped.");
+                console.log("⏹️ System audio recording stopped manually.");
             }
-            startRecognitionButton.disabled = false;
-            stopRecognitionButton.disabled = true;
+            resetUI();
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const musicInput = document.getElementById('musicInput');
+        const fileNameDisplay = document.getElementById('fileName');
+    
+        if (musicInput) {
+            musicInput.addEventListener('change', function () {
+                if (musicInput.files.length > 0) {
+                    fileNameDisplay.textContent = musicInput.files[0].name;
+                } else {
+                    fileNameDisplay.textContent = "No file chosen";
+                }
+            });
+        }
+    });
+    
+    // Function to reset buttons & stop system audio
+    function resetUI() {
+        startRecognitionButton.classList.remove('listening');
+        recognitionStatus.textContent = 'Click to start capturing system audio.';
+        startRecognitionButton.disabled = false;
+        stopRecognitionButton.disabled = true;
+
+        // Stop screen capture
+        if (displayStream) {
+            displayStream.getTracks().forEach(track => track.stop());
+        }
+    }
+});
+
+function convertToEmbedUrl(youtubeUrl) {
+    if (!youtubeUrl) return null;
+
+    const videoIdMatch = youtubeUrl.match(/[?&]v=([^&#]+)/);
+    if (videoIdMatch && videoIdMatch[1]) {
+        return `https://www.youtube.com/embed/${videoIdMatch[1]}`;
+    }
+
+    return youtubeUrl.replace("watch?v=", "embed/");
+}
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    const musicInput = document.getElementById('musicInput');
+    const fileNameDisplay = document.getElementById('fileName');
+    const uploadButton = document.getElementById('uploadButton');
+    const uploadResult = document.getElementById('uploadResult');
+
+    if (musicInput) {
+        musicInput.addEventListener('change', function () {
+            if (musicInput.files.length > 0) {
+                fileNameDisplay.textContent = musicInput.files[0].name;
+            } else {
+                fileNameDisplay.textContent = "No file chosen";
+            }
+        });
+    }
+
+    function convertToEmbedUrl(youtubeUrl) {
+        if (!youtubeUrl) return null;
+    
+        const videoIdMatch = youtubeUrl.match(/[?&]v=([^&#]+)/);
+        if (videoIdMatch && videoIdMatch[1]) {
+            return `https://www.youtube.com/embed/${videoIdMatch[1]}`;
+        }
+    
+        return youtubeUrl.replace("watch?v=", "embed/");
+    }
+    
+    if (uploadButton) {
+        uploadButton.addEventListener('click', async function () {
+            const file = musicInput.files[0];
+
+            if (!file) {
+                alert("Please select an audio file first.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('musicFile', file);
+
+            // Show loading message
+            uploadResult.classList.remove('hidden');
+            uploadResult.innerHTML = `<p>Uploading file... Please wait.</p>`;
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    console.error("❌ Server Error:", response.status, response.statusText);
+                    liveResultMic.innerHTML = `<p class="error">Upload failed. Server responded with error.</p>`;
+                    return;
+                }
+                
+                const result = await response.json();
+                console.log("📥 Received Response:", result);
+                
+
+
+                if (result.success) {
+                    uploadResult.innerHTML = uploadResult.innerHTML = `
+                    <h3>Song Recognized</h3>
+                    <p><strong>Song:</strong> ${result.title}</p>
+                    <p><strong>Artist:</strong> ${result.artist}</p>
+                    ${result.videoUrl ? `
+                        <div class="video-container">
+                            <iframe src="${convertToEmbedUrl(result.videoUrl)}" frameborder="0" allowfullscreen></iframe>
+                        </div>` : '<p class="error">No YouTube MV found.</p>'}
+                `;
+                
+                } else {
+                    uploadResult.innerHTML = `<p class="error">Failed to recognize song. Try again.</p>`;
+                }
+            } catch (error) {
+                console.error("❌ Error uploading file:", error);
+                uploadResult.innerHTML = `<p class="error">Upload failed. Please check the server.</p>`;
+            }
         });
     }
 });
 
-document.addEventListener('DOMContentLoaded', function () {
-    const uploadButton = document.getElementById('uploadButton');
-
-    uploadButton.addEventListener('click', function () {
-        const fileInput = document.getElementById('musicInput');
-        const file = fileInput.files[0];
-
-        if (!file) {
-            alert('Please select a music file before identifying.');
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('musicFile', file);
-
-        fetch('/upload', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success) {
-                document.getElementById('songTitle').textContent = result.title || 'Unknown Title';
-                document.getElementById('songArtist').textContent = result.artist || 'Unknown Artist';
-                document.getElementById('songLyrics').textContent = result.lyrics || 'Lyrics not available';
-
-                const videoPlayer = document.getElementById('videoPlayer');
-                if (result.videoUrl) {
-                    videoPlayer.src = result.videoUrl;
-                } else {
-                    document.getElementById('videoPlayerContainer').innerHTML = '<p>Music video not available.</p>';
-                }
-
-                document.getElementById('uploadResult').classList.remove('hidden');
-            } else {
-                alert('Unable to recognize the song.');
-            }
-        })
-        .catch(error => {
-            console.error('Upload error:', error);
-            alert('Error processing the file.');
-        });
-    });
-});
 
