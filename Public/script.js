@@ -191,7 +191,7 @@ historyList.prepend(li);
 const OpenAI = require('openai');
 
 const openai = new OpenAI({
-    apiKey: 'YOUR_API_KEY',
+    apiKey: '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',
 });
 
 async function testModel() {
@@ -334,12 +334,6 @@ function toggleLyrics() {
     }
 }
 
-function copyLyrics() {
-    const text = document.getElementById("lyricsText")?.innerText;
-    if (text) {
-        navigator.clipboard.writeText(text).then(() => alert("Lyrics copied!"));
-    }
-}
 
 function downloadLyrics(filename = "lyrics") {
     const text = document.getElementById("lyricsText")?.innerText;
@@ -588,15 +582,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 
                 const result = await response.json();
-                console.log("📥 Received Response:", result);
-                
+                const data = result.metadata || result;
+if (result.success) {
+    renderSongResult(data, uploadResult);
+} else {
+    uploadResult.innerHTML = `<p class="error">Failed to recognize song. Try again.</p>`;
+}
 
-
-                if (result.success) {
-                    renderSongResult(result, uploadResult);
-                } else {
-                    uploadResult.innerHTML = `<p class="error">Failed to recognize song. Try again.</p>`;
-                }
             } catch (error) {
                 console.error("❌ Error uploading file:", error);
                 uploadResult.innerHTML = `<p class="error">Upload failed. Please check the server.</p>`;

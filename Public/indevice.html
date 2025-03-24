@@ -25,13 +25,17 @@
     <div class="container">
         <h2>In-Device Music Recognition</h2>
 
-<button id="startRecognition">
-    <i class="fas fa-headphones"></i> Start Recognition
-</button>
+        <div class="button-stack">
+            <button id="startRecognition">
+                <i class="fas fa-headphones"></i> Start Recognition
+            </button>
+        
+            <button id="stopRecognition" disabled>
+                <i class="fas fa-stop-circle"></i> Stop Recognition
+            </button>
+        </div>
+        
 
-<button id="stopRecognition" disabled>
-    <i class="fas fa-stop-circle"></i> Stop Recognition
-</button>
 
 <p id="recognitionStatus">Click to start capturing system audio.</p>
 

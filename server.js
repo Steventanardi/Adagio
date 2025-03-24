@@ -166,22 +166,6 @@ async function recognizeMusic(filePath) {
     return { success: false, message: 'Unable to recognize the song.' };
 }
 
-
-
-// Express Route
-app.post('/upload-mic-audio', upload.single('musicFile'), async (req, res) => {
-    if (!req.file) {
-        console.error("❌ No file uploaded.");
-        return res.status(400).json({ success: false, message: 'No audio detected.' });
-    }
-
-    console.log("✅ Live audio received:", req.file.path);
-    const filePath = req.file.path;
-    
-    const result = await recognizeMusic(filePath);
-    res.json(result);
-});
-
 app.post('/fetch-spotify-link', async (req, res) => {
     const query = req.body.query;
 
@@ -289,27 +273,41 @@ app.post('/upload-mic-audio', upload.single('musicFile'), async (req, res) => {
     const trimmedPath = `uploads/trimmed-${Date.now()}.mp3`;
 
     ffmpeg(filePath)
-        .audioFilters("highpass=f=200, lowpass=f=3000") // Enhancing voice clarity
+        .audioFilters("highpass=f=200, lowpass=f=3000")
         .output(trimmedPath)
         .on('end', async () => {
             console.log('✅ Audio cleaned and processed.');
             const result = await identifySong(trimmedPath);
 
             if (result.success) {
+                const metadata = result.metadata || result;
+
+                const {
+                    title = '',
+                    artist = '',
+                    album = '',
+                    release_date = '',
+                    label = '',
+                    song_link = ''
+                } = metadata;
+
+                const lyrics = await fetchLyrics(artist, title);
+                const videoUrl = await fetchYouTubeVideoUrl(title, artist);
+
                 res.json({
                     success: true,
                     metadata: {
-                        title: result.metadata.title,
-                        artist: result.metadata.artist,
-                        album: result.metadata.album || '',
-                        release_date: result.metadata.release_date || '',
-                        label: result.metadata.label || '',
-                        song_link: result.metadata.song_link || '',
-                        lyrics: result.metadata.lyrics || '',
-                        videoUrl: result.metadata.videoUrl || await fetchYouTubeVideoUrl(result.metadata.artist, result.metadata.title)
+                        title,
+                        artist,
+                        album,
+                        release_date,
+                        label,
+                        song_link,
+                        lyrics,
+                        videoUrl
                     }
                 });
-                
+
             } else {
                 res.json({ success: false, message: 'Unable to recognize the song. Try singing clearly.' });
             }
@@ -320,6 +318,7 @@ app.post('/upload-mic-audio', upload.single('musicFile'), async (req, res) => {
         })
         .run();
 });
+
 
 
 app.post('/upload', upload.single('musicFile'), async (req, res) => {
@@ -345,11 +344,19 @@ app.post('/upload', upload.single('musicFile'), async (req, res) => {
 
                 res.json({
                     success: true,
-                    title,
-                    artist,
-                    lyrics,
-                    videoUrl
+                    metadata: {
+                        title,
+                        artist,
+                        album: metadata.album || '',
+                        release_date: metadata.release_date || '',
+                        label: metadata.label || '',
+                        song_link: metadata.song_link || '',
+                        lyrics,
+                        videoUrl
+                    }
                 });
+                
+                
             } else {
                 res.json({ success: false, message: 'Unable to recognize the song.' });
             }
@@ -394,12 +401,6 @@ app.post('/intelligent-search', async (req, res) => {
     }
 });
 
-function showTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    document.getElementById(tabName + 'Tab').classList.add('active');
-}
 
 
 async function fetchSpotifyTrack(artist, title) {

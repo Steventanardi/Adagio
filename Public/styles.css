@@ -18,6 +18,12 @@ header {
     width: 93%;
 }
 
+.main-content-wrapper {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
 
 #intelligentSearchInput {
     width: 80%;
@@ -55,14 +61,13 @@ header {
 }
 
 .result-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-    gap: 40px;
-    padding-top: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px; /* Smaller gap between items */
+    padding-top: 0;
+    margin-top: 0;
 }
-
-
-
 
 
 #intelligentSearchButton {
@@ -82,7 +87,7 @@ header {
 
 .video-iframe {
     width: 100%;
-    height: 360px;
+    height: 100%;
     border-radius: 8px;
     box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
 }
@@ -232,14 +237,20 @@ nav ul li a:hover {
 
 .container {
     background-color: #ffffff;
-    padding: 30px;
+    padding: 20px;
     border-radius: 12px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-    max-width: 500px;
+    max-width: 900px; /* Reduce width to enforce single column */
     width: 100%;
+    margin: 20px auto;
     text-align: center;
-    margin: 40px auto 100px auto; /* Adding margin to give space above audio player */
 }
+
+.container * {
+    margin-top: 10px !important;
+    margin-bottom: 10px !important;
+}
+
 
 .spacer {
     flex: 1; /* Fills all available space */
@@ -293,16 +304,6 @@ nav ul li a:hover {
     flex: 1;
 }
 
-/*hero*/
-.hero {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    height: 100vh; /* Full screen height */
-    background-color: #f4f7fc; /* Light background */
-}
-
 .intro-container {
     position: sticky;
     top: 0;
@@ -313,6 +314,10 @@ nav ul li a:hover {
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     animation: slideDown 0.4s ease-in-out;
     border-bottom: 1px solid #ddd;
+    margin-bottom: 20px;
+    max-width: 900px; /* ADD THIS */
+    margin: 0 auto;   /* CENTER */
+    border-radius: 12px; /* Optional: soften the look */
 }
 
 @keyframes slideDown {
@@ -379,9 +384,9 @@ nav ul li a:hover {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
-    margin-bottom: 1.5em;
+    margin-bottom: 10px; /* Decrease space between search and results */
 }
 
 .search-container input[type="text"] {
@@ -479,14 +484,18 @@ button:disabled {
 
 .result-box {
     margin-top: 20px;
-    padding: 20px;
+    padding: 30px;
     background: white;
+    background-color: #f9f9f9;
     border-radius: 12px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     text-align: center;
-    max-width: 500px;
+    color: #333;
+    max-width: 700px;
+    margin-top: 20px;
     margin-left: auto;
     margin-right: auto;
+    font-size: 1.05rem;
 }
 
 .result-box h3 {
@@ -505,22 +514,25 @@ button:disabled {
 .video-container {
     position: relative;
     width: 100%;
-    padding-top: 56.25%; /* 16:9 aspect ratio */
-    border-radius: 12px;
+    max-width: 800px; /* You can adjust this max size */
+    margin: 0 auto;
+    padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+    height: 0;
     overflow: hidden;
-    background: #000;
-    margin-bottom: 15px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
 }
 
 .video-container iframe {
     position: absolute;
-    top: 0; left: 0;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    border: none;
-    pointer-events: auto;
-    z-index: 1;
+    border: 0;
 }
+
+
 
 
 #liveResultMic {
@@ -596,11 +608,15 @@ button:disabled {
 }
 
 .hero {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 40px 20px;
-}
-
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh; /* instead of fixed height */
+    background-color: #f4f7fc;
+  }
+  
+  
 
 .floating-sphere {
     position: absolute;
@@ -741,19 +757,26 @@ button:disabled {
 
 .upload-container {
     background: white;
-    padding: 30px;
+    padding: 40px;
     border-radius: 12px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     text-align: center;
-    max-width: 500px;
+    max-width: 700px;
     margin: 40px auto;
+    font-size: 1.05rem;
 }
 
 .upload-container h2 {
-    font-size: 22px;
+    font-size: 1.6rem;
     color: #333;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
+
+button, .custom-file-upload, .upload-btn {
+    padding: 16px 28px;
+    font-size: 1.1rem;
+}
+
 
 /* Custom File Upload Button */
 .custom-file-upload {
@@ -895,18 +918,6 @@ button:disabled {
     100% {
         transform: translate(-50%, -50%) translateY(0);
     }
-}
-
-/* General styling for the result page */
-.container {
-    background-color: #ffffff;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-    max-width: 800px; /* Wider container */
-    width: 100%;
-    margin: 40px auto;
-    text-align: center;
 }
 
 /* Song Information Section */
@@ -1173,6 +1184,14 @@ body.dark-mode .song-lyrics {
     justify-content: center;
     gap: 10px;
     margin-top: 15px;
+}
+
+.button-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 20px;
 }
 
 
