@@ -91,53 +91,63 @@ document.addEventListener('DOMContentLoaded', function () {
     
             if (result.success && result.chatText) {
                 const songs = result.chatText
-                    .split(/(?=\d+\.)/g)
-                    .map(song => song.replace(/^\d+\.\s*/, '').trim())
-                    .filter(song => song); // Filter out empty entries
+    .match(/\d+\.\s+(.+?)(?:\n|$)/g) // match lines like "1. song name"
+    ?.map(line => line.replace(/^\d+\.\s*/, '').replace(/[\u2013\u2014–—]+/g, '-').trim()) || [];
+    console.log('Parsed Songs:', songs);
+
+                const videoElements = await Promise.all(
+                    songs.map(async (songText) => {
+                        const videoUrl = await fetchYouTubeVideo(songText);
+                        const encodedQuery = encodeURIComponent(songText);
     
-                    const videoElements = await Promise.all(
-                        songs.map(async (songText) => {
-                          const videoUrl = await fetchYouTubeVideo(songText);
-                          return `
+                        return `
                             <div class="song-item">
-                              ${videoUrl ? `
+                                ${videoUrl ? `
                                 <div class="video-container">
-                                  <iframe src="${convertToEmbedUrl(videoUrl)}" frameborder="0" allowfullscreen></iframe>
-                                </div>` : '<p>Video not available</p>'
-                              }
-                              <p>"${songText}"</p>
+                                    <iframe src="${convertToEmbedUrl(videoUrl)}" frameborder="0" allowfullscreen></iframe>
+                                </div>` : '<p>Video not available</p>'}
+                                <p><strong>${songText}</strong></p>
+                                <div class="platform-links icon-links">
+                                    <a href="https://open.spotify.com/search/${encodedQuery}" target="_blank">
+                                        <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/spotify.svg" class="platform-icon" alt="Spotify" />
+                                    </a>
+                                    <a href="https://music.apple.com/us/search?term=${encodedQuery}" target="_blank">
+                                        <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/applemusic.svg" class="platform-icon" alt="Apple Music" />
+                                    </a>
+                                    <a href="https://music.youtube.com/search?q=${encodedQuery}" target="_blank">
+                                        <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/youtubemusic.svg" class="platform-icon" alt="YouTube Music" />
+                                    </a>
+                                </div>
                             </div>
-                          `;
-                        })
-                      );
-                      
-                                      
+                        `;
+                    })
+                );
     
                 resultContainer.innerHTML = `
                     <div>
-                        <h3>Search Results</h3>
+                        <h3>🔍 Search Results</h3>
                         ${videoElements.join('')}
                     </div>
                 `;
             } else {
                 resultContainer.innerHTML = `<p class="error">${result.message || 'No results found.'}</p>`;
             }
+    
         } catch (error) {
             console.error('Error fetching search results:', error);
             resultContainer.innerHTML = '<p class="error">An error occurred. Please try again later.</p>';
         }
-        // Update search history
-const historyList = document.getElementById('searchHistory');
-const li = document.createElement('li');
-li.textContent = query;
-li.onclick = () => {
-    document.getElementById('searchInput').value = li.textContent;
-};
-historyList.prepend(li);
-
+    
+        // ✅ Update search history
+        const historyList = document.getElementById('searchHistory');
+        const li = document.createElement('li');
+        li.textContent = query;
+        li.onclick = () => {
+            document.getElementById('searchInput').value = li.textContent;
+        };
+        historyList.prepend(li);
     });
     
-    console.log('Query:', query);
 
 
     async function intelligentMusicSearch() {
@@ -287,7 +297,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         // Change button color briefly to red, then reset
                         startListeningMicButton.classList.remove('listening');
-                        startListeningMicButton.classList.add('stopped');
+                        startListeningMicButton.classList.remove('listening', 'pulsing', 'stopped');
                         micStatus.textContent = 'Stopped. Click to listen again.';
                         setTimeout(() => startListeningMicButton.classList.remove('stopped'), 1000);
 
@@ -296,7 +306,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     mediaRecorder.start();
                     console.log("Recording started...");
-                    startListeningMicButton.classList.add('listening');
+                    startListeningMicButton.classList.add('listening', 'pulsing');
                     micStatus.textContent = 'Listening... Click again to stop.';
                     isListening = true;
 
@@ -600,14 +610,38 @@ if (result.success) {
 function renderSongResult(data, targetElement) {
     if (!data || !targetElement) return;
 
+    const title = data.title || '';
+    const artist = data.artist || '';
+    const query = encodeURIComponent(`${artist} ${title}`);
+
+    const links = {
+        spotify: `https://open.spotify.com/search/${query}`,
+        appleMusic: `https://music.apple.com/us/search?term=${query}`,
+        youtubeMusic: `https://music.youtube.com/search?q=${query}`
+    };
+
     targetElement.innerHTML = `
         <h3>🎵 Song Recognized</h3>
-        <p><strong>Title:</strong> ${data.title}</p>
-        <p><strong>Artist:</strong> ${data.artist}</p>
+        <p><strong>Title:</strong> ${title}</p>
+        <p><strong>Artist:</strong> ${artist}</p>
         ${data.album ? `<p><strong>Album:</strong> ${data.album}</p>` : ''}
         ${data.release_date ? `<p><strong>Release Date:</strong> ${data.release_date}</p>` : ''}
         ${data.label ? `<p><strong>Label:</strong> ${data.label}</p>` : ''}
-        ${data.song_link ? `<p><strong>Song Link:</strong> <a href="${data.song_link}" target="_blank">Listen</a></p>` : ''}
+
+        <div class="platform-links">
+            <h4>🎧 Listen on:</h4>
+            <div class="icon-links">
+                <a href="${links.spotify}" target="_blank">
+                    <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/spotify.svg" alt="Spotify" class="platform-icon">
+                </a>
+                <a href="${links.appleMusic}" target="_blank">
+                    <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/applemusic.svg" alt="Apple Music" class="platform-icon">
+                </a>
+                <a href="${links.youtubeMusic}" target="_blank">
+                    <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/youtubemusic.svg" alt="YouTube Music" class="platform-icon">
+                </a>
+            </div>
+        </div>
 
         ${data.videoUrl ? `
             <div class="video-container">
@@ -620,10 +654,12 @@ function renderSongResult(data, targetElement) {
                 <div id="lyricsContent" class="">
                     <pre class="song-lyrics" id="lyricsText">${data.lyrics}</pre>
                     <button onclick="copyLyrics()">📋 Copy</button>
-                    <button onclick="downloadLyrics('${data.title.replace(/'/g, '')}')">💾 Save as .txt</button>
+                    <button onclick="downloadLyrics('${title.replace(/'/g, '')}')">💾 Save as .txt</button>
                 </div>
             </div>` : '<p class="error">Lyrics not available.</p>'}
     `;
 }
+
+
 
 

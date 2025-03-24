@@ -383,13 +383,24 @@ app.post('/intelligent-search', async (req, res) => {
 
     try {
         const chatResponse = await openai.chat.completions.create({
-            model: 'gpt-3.5-turbo',
+            model: 'gpt-4', // upgraded model for better reasoning and formatting
             messages: [
-                { role: 'system', content: 'You are a music expert.' },
-                { role: 'user', content: query },
+              {
+                role: 'system',
+                content: `You are a professional music expert and recommendation engine. 
+          Your job is to provide clear, clean lists of song titles when asked about music.
+          Only include song names and optionally the artist name. Do NOT include explanations, introductions, or conclusions. 
+          Return results in a numbered format (e.g., 1. Song Title - Artist).`,
+              },
+              {
+                role: 'user',
+                content: query,
+              },
             ],
-            max_tokens: 300,
-        });
+            temperature: 0.7,
+            max_tokens: 500,
+          });
+          
 
         const chatText = chatResponse.choices?.[0]?.message?.content || 'No response from ChatGPT';
 
@@ -592,6 +603,18 @@ app.post('/recognize-indevice-audio', upload.single('musicFile'), async (req, re
         .run();
 });
 
+function generateMusicLinks(title, artist) {
+    const query = encodeURIComponent(`${artist} ${title}`);
+
+    return {
+        spotify: `https://open.spotify.com/search/${query}`,
+        appleMusic: `https://music.apple.com/us/search?term=${query}`,
+        youtubeMusic: `https://music.youtube.com/search?q=${query}`,
+        deezer: `https://www.deezer.com/search/${query}`,
+        soundcloud: `https://soundcloud.com/search?q=${query}`,
+        tidal: `https://listen.tidal.com/search?q=${query}`
+    };
+}
 
 
 

@@ -26,14 +26,13 @@
 
     <div class="container">
         <h2>Live Recognition through Microphone</h2>
-
-<!-- Use the same ID but make it an icon -->
-<button id="startListeningMic">
-    <i class="fas fa-microphone"></i>
-</button>
-
-<p id="micStatus">Click to start listening</p>
-
+        <div class="mic-control">
+            <button id="startListeningMic">
+              <i class="fas fa-microphone mic-icon"></i>
+            </button>
+            <p id="micStatus">Click to start listening</p>
+          </div>          
+        
 <div id="liveResultMic" class="result-container">
     <p>Waiting for recognition...</p>
 </div>
