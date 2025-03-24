@@ -1,9 +1,31 @@
 body {
-    margin: 0;
-    padding-top: 100px; /* Add space for the floating header */
-    background-color: #f4f7fc; /* Optional background for contrast */
-}
+    font-family: -apple-system, BlinkMacSystemFont, "San Francisco", "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    color: #111;
+  }
+  
 
+  h1, h2, h3, h4, h5 {
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    margin-bottom: 0.5em;
+  }
+  
+  button, input, select {
+    font-family: inherit;
+    font-size: 1em;
+  }
+  
+  a {
+    color: #007aff;
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  
 
 header {
     height: 60px; /* Set a specific height */
@@ -1328,14 +1350,6 @@ body.dark-mode .song-lyrics {
     background-color: #3ba1a7; /* Darker blue on hover */
 }
 
-/* Base styles */
-body, html {
-    margin: 0;
-    padding: 0;
-    font-family: 'Roboto', sans-serif;
-    background-color: #f4f7fc;
-    color: #333;
-}
 
 /* Auth Container Styles */
 .auth-container {
@@ -1451,14 +1465,6 @@ body, html {
     color: #ffffff;
 }
 
-/* General styles */
-body, html {
-    margin: 0;
-    padding: 0;
-    font-family: 'Roboto', sans-serif;
-    background-color: #f4f7fc;
-    color: #333;
-}
 
 /* Signup Container */
 .signup-container {
