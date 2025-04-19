@@ -200,7 +200,7 @@ app.post('/fetch-spotify-link', async (req, res) => {
 async function fetchYouTubeVideoUrl(artist, title) {
     console.log(`🔎 Searching YouTube for: ${artist} - ${title}`);
 
-    const apiKey = '[GOOGLE_YOUTUBE_LEAKED]'; // Replace with your actual YouTube API key
+    const apiKey = '[GOOGLE_YOUTUBE_LEAKED]'; 
     const searchQuery = encodeURIComponent(`${artist} ${title} official music video`);
     const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${searchQuery}&key=${apiKey}&type=video&maxResults=1`;
 
@@ -217,7 +217,7 @@ async function fetchYouTubeVideoUrl(artist, title) {
         console.error("❌ Error fetching YouTube video:", error);
     }
 
-    return null; // No video found
+    return null; 
 }
 
 
@@ -568,7 +568,7 @@ app.post('/signup', async (req, res) => {
 async function fetchLyrics(artist, title) {
     console.log(`🎼 Searching lyrics for: ${artist} - ${title}`);
 
-    const apiKey = '[GENIUS_LEAKED]'; // replace with your valid key
+    const apiKey = '[GENIUS_LEAKED]';
     const searchQuery = encodeURIComponent(`${artist} ${title}`);
     const url = `https://api.genius.com/search?q=${searchQuery}`;
 

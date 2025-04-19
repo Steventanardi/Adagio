@@ -31,8 +31,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return '';
     }
 
-    // Function to handle song recognition and redirect to result.html
-    // Updated function to handle song recognition and video URL retrieval
+    // Function to handle song recognition 
     async function handleSongRecognition(result) {
         if (result.success) {
             const redirectUrl = `result.html?title=${encodeURIComponent(result.title)}&artist=${encodeURIComponent(result.artist)}&lyrics=${encodeURIComponent(result.lyrics)}&videoUrl=${encodeURIComponent(result.videoUrl)}&spotifyLink=${encodeURIComponent(result.spotifyLink)}&playlists=${encodeURIComponent(JSON.stringify(result.playlists))}&similarSongs=${encodeURIComponent(JSON.stringify(result.similarSongs))}`;
@@ -51,6 +50,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const response = await fetch(searchUrl);
             const data = await response.json();
             console.log('YouTube API Response:', data); // Log the response to debug
+            console.log("Searching YouTube for:", query);
+            console.log("Returned video URL:", videoUrl);
+
     
             if (data.items && data.items.length > 0) {
                 const videoId = data.items[0].id.videoId;
@@ -91,32 +93,39 @@ document.addEventListener('DOMContentLoaded', function () {
     
             if (result.success && result.chatText) {
                 const songs = result.chatText
-    .match(/\d+\.\s+(.+?)(?:\n|$)/g) // match lines like "1. song name"
-    ?.map(line => line.replace(/^\d+\.\s*/, '').replace(/[\u2013\u2014–—]+/g, '-').trim()) || [];
-    console.log('Parsed Songs:', songs);
-
-                const videoElements = await Promise.all(
-                    songs.map(async (songText) => {
-                        const videoUrl = await fetchYouTubeVideo(songText);
-                        const encodedQuery = encodeURIComponent(songText);
+                    .split(/(?=\d+\.)/g)
+                    .map(song => song.replace(/^\d+\.\s*/, '').trim())
+                    .filter(song => song); 
     
-                        return `
+                    const videoElements = await Promise.all(
+                        songs.map(async (songText) => {
+                          const [title, artist] = songText.split(' - ');
+                          const query = `${artist || ''} ${title || ''} official music video`;
+                          const videoUrl = await fetchYouTubeVideo(query.trim());
+                      
+                          return `
                             <div class="song-item">
-                                ${videoUrl ? `
+                            ${videoUrl ? `
                                 <div class="video-container">
-                                    <iframe src="${convertToEmbedUrl(videoUrl)}" frameborder="0" allowfullscreen></iframe>
-                                </div>` : '<p>Video not available</p>'}
-                                <p><strong>${songText}</strong></p>
-                                <div class="platform-links icon-links">
-                                    <a href="https://open.spotify.com/search/${encodedQuery}" target="_blank">
-                                        <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/spotify.svg" class="platform-icon" alt="Spotify" />
+                                  <iframe src="${videoUrl}" frameborder="0" allowfullscreen></iframe>
+                                  <p style="margin-top: 5px;">
+                                    <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(songText)}" target="_blank">
+                                      🔎 Search more on YouTube
                                     </a>
-                                    <a href="https://music.apple.com/us/search?term=${encodedQuery}" target="_blank">
-                                        <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/applemusic.svg" class="platform-icon" alt="Apple Music" />
-                                    </a>
-                                    <a href="https://music.youtube.com/search?q=${encodedQuery}" target="_blank">
-                                        <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/youtubemusic.svg" class="platform-icon" alt="YouTube Music" />
-                                    </a>
+                                  </p>
+                                </div>` : `
+                                <p class="error">
+                                  🎥 YouTube video not available.<br>
+                                  <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(songText)}" target="_blank">
+                                    <i class="fab fa-youtube"></i> Search on YouTube
+                                  </a>
+                                </p>`}
+                                                          
+                                <p>"${songText}"</p>
+                                <div style="font-size: 1.5rem; margin-top: 10px;">
+                                    <a href="https://open.spotify.com/search/${encodeURIComponent(songText)}" target="_blank"><i class="fab fa-spotify"></i></a>
+                                    <a href="https://music.apple.com/us/search?term=${encodeURIComponent(songText)}" target="_blank"><i class="fas fa-music"></i></a>
+                                    <a href="https://music.youtube.com/search?q=${encodeURIComponent(songText)}" target="_blank"><i class="fab fa-youtube"></i></a>
                                 </div>
                             </div>
                         `;
@@ -132,13 +141,11 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 resultContainer.innerHTML = `<p class="error">${result.message || 'No results found.'}</p>`;
             }
-    
         } catch (error) {
             console.error('Error fetching search results:', error);
             resultContainer.innerHTML = '<p class="error">An error occurred. Please try again later.</p>';
         }
     
-        // ✅ Update search history
         const historyList = document.getElementById('searchHistory');
         const li = document.createElement('li');
         li.textContent = query;
@@ -147,6 +154,7 @@ document.addEventListener('DOMContentLoaded', function () {
         };
         historyList.prepend(li);
     });
+    
     
 
 
@@ -295,7 +303,6 @@ document.addEventListener('DOMContentLoaded', function () {
                             liveResultMic.innerHTML = `<p class="error">Upload failed.</p>`;
                         }
 
-                        // Change button color briefly to red, then reset
                         startListeningMicButton.classList.remove('listening');
                         startListeningMicButton.classList.remove('listening', 'pulsing', 'stopped');
                         micStatus.textContent = 'Stopped. Click to listen again.';
@@ -310,7 +317,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     micStatus.textContent = 'Listening... Click again to stop.';
                     isListening = true;
 
-                    // Auto-stop after 10 seconds
                     setTimeout(() => {
                         if (mediaRecorder.state === 'recording') {
                             mediaRecorder.stop();
@@ -322,7 +328,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     micStatus.textContent = '❌ Microphone blocked. Allow access in settings.';
                 }
             } else {
-                // Stop Recording Manually
                 if (mediaRecorder && mediaRecorder.state === 'recording') {
                     mediaRecorder.stop();
                     console.log("Recording manually stopped.");
@@ -332,6 +337,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
 // --- Lyrics Interaction Helpers ---
 
 function toggleLyrics() {
@@ -527,13 +533,21 @@ document.addEventListener('DOMContentLoaded', async function () {
 function convertToEmbedUrl(youtubeUrl) {
     if (!youtubeUrl) return null;
 
-    const videoIdMatch = youtubeUrl.match(/[?&]v=([^&#]+)/);
-    if (videoIdMatch && videoIdMatch[1]) {
-        return `https://www.youtube.com/embed/${videoIdMatch[1]}`;
+    // Check if it's already an embed URL
+    if (youtubeUrl.includes("youtube.com/embed/")) {
+        return youtubeUrl;
+    }
+
+    // Extract video ID from typical watch URL or short link
+    const match = youtubeUrl.match(/[?&]v=([^&#]+)/) || youtubeUrl.match(/youtu\.be\/([^&#]+)/);
+    if (match && match[1]) {
+        return `https://www.youtube.com/embed/${match[1]}`;
     }
 
     return youtubeUrl.replace("watch?v=", "embed/");
 }
+
+
 
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -555,13 +569,20 @@ document.addEventListener('DOMContentLoaded', function () {
     function convertToEmbedUrl(youtubeUrl) {
         if (!youtubeUrl) return null;
     
-        const videoIdMatch = youtubeUrl.match(/[?&]v=([^&#]+)/);
-        if (videoIdMatch && videoIdMatch[1]) {
-            return `https://www.youtube.com/embed/${videoIdMatch[1]}`;
+        // Check if it's already an embed URL
+        if (youtubeUrl.includes("youtube.com/embed/")) {
+            return youtubeUrl;
+        }
+    
+        // Extract video ID from typical watch URL or short link
+        const match = youtubeUrl.match(/[?&]v=([^&#]+)/) || youtubeUrl.match(/youtu\.be\/([^&#]+)/);
+        if (match && match[1]) {
+            return `https://www.youtube.com/embed/${match[1]}`;
         }
     
         return youtubeUrl.replace("watch?v=", "embed/");
     }
+    
     
     if (uploadButton) {
         uploadButton.addEventListener('click', async function () {
@@ -645,8 +666,20 @@ function renderSongResult(data, targetElement) {
 
         ${data.videoUrl ? `
             <div class="video-container">
-                <iframe src="${convertToEmbedUrl(data.videoUrl)}" frameborder="0" allowfullscreen></iframe>
-            </div>` : '<p class="error">No YouTube MV found.</p>'}
+              <iframe src="${convertToEmbedUrl(data.videoUrl)}" frameborder="0" allowfullscreen></iframe>
+              <p style="margin-top: 5px;">
+                <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(`${data.title} ${data.artist}`)}" target="_blank">
+                  🔎 Search more on YouTube
+                </a>
+              </p>
+            </div>` : `
+            <p class="error">
+              🎥 YouTube video not available.<br>
+              <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(`${data.title} ${data.artist}`)}" target="_blank">
+                <i class="fab fa-youtube"></i> Search on YouTube
+              </a>
+            </p>`}
+                   
 
         ${data.lyrics ? `
             <div class="lyrics-section">
