@@ -8,7 +8,7 @@ const ffmpeg = require('fluent-ffmpeg');
 const mysql = require('mysql');
 const FormData = require('form-data');
 const cheerio = require('cheerio');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 const { OpenAI } = require('openai');
@@ -20,7 +20,7 @@ global.fetch = require('node-fetch');
 
 const app = express();
 const PORT = 3000;
-const JWT_SECRET = 'your_jwt_secret_key';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Set up AcrCloud config
 const acrClient = new AcrCloud({
