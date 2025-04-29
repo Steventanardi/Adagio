@@ -36,4 +36,10 @@
     "url": "https://github.com/Steventanardi/Adagio/issues"
   },
   "homepage": "https://github.com/Steventanardi/Adagio#readme"
+  ,
+  "engines": {
+  "node": "20.x"
+}
+
+
 }

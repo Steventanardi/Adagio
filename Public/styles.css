@@ -590,14 +590,14 @@ button:disabled {
     text-decoration: underline;
   }
   
-.video-container iframe {
+  .video-container iframe {
     position: absolute;
-    top: 0;
-    left: 0;
+    top: 0; left: 0;
     width: 100%;
-    height: 100%;
-    border: 0;
+    height: 360px;
+    border: none;
 }
+
 
 
 
@@ -666,7 +666,6 @@ button:disabled {
 }
 
 
-
 .player-info {
     margin-left: 20px;
     text-align: left;
@@ -730,7 +729,7 @@ button:disabled {
     align-items: center;
     justify-content: flex-start;
     min-height: 100vh; /* instead of fixed height */
-    background-color: #f4f7fc;
+    background-color: #ffffff;
   }
   
   
@@ -1631,12 +1630,45 @@ body.dark-mode .song-lyrics {
     border-radius: 8px;
     cursor: pointer;
     transition: background-color 0.3s, box-shadow 0.3s;
+}input:-webkit-autofill {
+  box-shadow: 0 0 0 30px white inset !important;
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+  -webkit-text-fill-color: #000 !important;
 }
+
 
 .identify-container button:hover {
     background-color: #0056b3;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+  background-clip: padding-box !important;
+}
 
+
+#searchInput:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    border: 1px solid white !important;
+  }
+  
+
+#searchInput {
+    background-color: white;
+    border: 1px solid white;
+    box-shadow: none;
+}
+
+input:-webkit-autofill {
+    box-shadow: 0 0 0 30px white inset !important;
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    -webkit-text-fill-color: #000 !important;
+  }
+  
 

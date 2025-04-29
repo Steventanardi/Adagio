@@ -15,7 +15,8 @@ document.addEventListener('DOMContentLoaded', function () {
     async function getMusicVideoUrl(title, artist) {
         const apiKey = '[GOOGLE_YOUTUBE_LEAKED]';
         const query = `${title} ${artist} official music video`;
-        const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&videoEmbeddable=true&key=${apiKey}`;
+        const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${apiKey}`;
+
 
         try {
             const response = await fetch(searchUrl);
@@ -23,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (data.items && data.items.length > 0) {
                 const videoId = data.items[0].id.videoId;
                 return `https://www.youtube.com/embed/${videoId}`;
-            }
+            }            
         } catch (error) {
             console.error('Error fetching YouTube video:', error);
         }
@@ -43,28 +44,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     async function fetchYouTubeVideo(query) {
-        const apiKey = '[GOOGLE_YOUTUBE_LEAKED]'; // Replace with your actual API key
-        const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&videoEmbeddable=true&key=${apiKey}`;
-        
+        const apiKey = '[GOOGLE_YOUTUBE_LEAKED]'; // Your YouTube API key
+        const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&videoEmbeddable=true&maxResults=1&key=${apiKey}`;
+    
         try {
             const response = await fetch(searchUrl);
             const data = await response.json();
-            console.log('YouTube API Response:', data); // Log the response to debug
-            console.log("Searching YouTube for:", query);
-            console.log("Returned video URL:", videoUrl);
-
+            console.log('📺 YouTube API Response:', data); // Debug
     
             if (data.items && data.items.length > 0) {
                 const videoId = data.items[0].id.videoId;
-                return `https://www.youtube.com/embed/${videoId}`;
+                return `https://www.youtube.com/embed/${videoId}`; // ✅ RETURN EMBED URL
             } else {
-                console.error('No videos found for query:', query);
+                console.warn('❌ No video found for query:', query);
             }
         } catch (error) {
-            console.error('Error fetching YouTube video:', error);
+            console.error('❌ Error fetching YouTube video:', error);
         }
-        return ''; // Return an empty string if no video is found
+    
+        return ''; // fallback if nothing is found
     }
+    
+    
     
     
     document.getElementById('intelligentSearchButton').addEventListener('click', async () => {
@@ -99,36 +100,45 @@ document.addEventListener('DOMContentLoaded', function () {
     
                     const videoElements = await Promise.all(
                         songs.map(async (songText) => {
-                          const [title, artist] = songText.split(' - ');
-                          const query = `${artist || ''} ${title || ''} official music video`;
-                          const videoUrl = await fetchYouTubeVideo(query.trim());
+                            let title = songText;
+                            let artist = ''
+                            console.log(`🎥 Fetching video for: ${songText}`);
+
+                    if (songText.includes(' - ')) {
+                        [title, artist] = songText.split(' - ');
+                    }
+
+            const searchQuery = `${title} ${artist} official music video`.trim();
+            const videoUrl = await fetchYouTubeVideo(searchQuery);
+                         
                       
-                          return `
-                            <div class="song-item">
-                            ${videoUrl ? `
-                                <div class="video-container">
-                                  <iframe src="${videoUrl}" frameborder="0" allowfullscreen></iframe>
-                                  <p style="margin-top: 5px;">
-                                    <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(songText)}" target="_blank">
-                                      🔎 Search more on YouTube
-                                    </a>
-                                  </p>
-                                </div>` : `
-                                <p class="error">
-                                  🎥 YouTube video not available.<br>
-                                  <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(songText)}" target="_blank">
-                                    <i class="fab fa-youtube"></i> Search on YouTube
-                                  </a>
-                                </p>`}
-                                                          
-                                <p>"${songText}"</p>
-                                <div style="font-size: 1.5rem; margin-top: 10px;">
-                                    <a href="https://open.spotify.com/search/${encodeURIComponent(songText)}" target="_blank"><i class="fab fa-spotify"></i></a>
-                                    <a href="https://music.apple.com/us/search?term=${encodeURIComponent(songText)}" target="_blank"><i class="fas fa-music"></i></a>
-                                    <a href="https://music.youtube.com/search?q=${encodeURIComponent(songText)}" target="_blank"><i class="fab fa-youtube"></i></a>
-                                </div>
-                            </div>
-                        `;
+            return `
+            <div class="song-item">
+              ${videoUrl ? `
+                <div class="video-container">
+                  <iframe src="${videoUrl}" frameborder="0" allowfullscreen></iframe>
+                  <p style="margin-top: 5px;">
+                    <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(songText)}" target="_blank">
+                      🔍 Search more on YouTube
+                    </a>
+                  </p>
+                </div>` : `
+                <p class="error">
+                  ❌ YouTube video not available.<br>
+                  <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(songText)}" target="_blank">
+                    <i class="fab fa-youtube"></i> Search on YouTube
+                  </a>
+                </p>`}
+              
+              <p>"${songText}"</p>
+              <div style="font-size: 1.5rem; margin-top: 10px;">
+                <a href="https://open.spotify.com/search/${encodeURIComponent(songText)}" target="_blank"><i class="fab fa-spotify platform-icon"></i></a>
+                <a href="https://music.apple.com/us/search?term=${encodeURIComponent(songText)}" target="_blank"><i class="fab fa-apple platform-icon"></i></a>
+                <a href="https://music.youtube.com/search?q=${encodeURIComponent(songText)}" target="_blank"><i class="fab fa-youtube platform-icon"></i></a>
+              </div>
+            </div>
+          `;
+          
                     })
                 );
     
@@ -533,19 +543,19 @@ document.addEventListener('DOMContentLoaded', async function () {
 function convertToEmbedUrl(youtubeUrl) {
     if (!youtubeUrl) return null;
 
-    // Check if it's already an embed URL
-    if (youtubeUrl.includes("youtube.com/embed/")) {
-        return youtubeUrl;
+    // If already an embed URL, return it
+    if (youtubeUrl.includes("youtube.com/embed/")) return youtubeUrl;
+
+    // Match YouTube ID from watch or shortened URL
+    const idMatch = youtubeUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/);
+    if (idMatch && idMatch[1]) {
+        return `https://www.youtube.com/embed/${idMatch[1]}`;
     }
 
-    // Extract video ID from typical watch URL or short link
-    const match = youtubeUrl.match(/[?&]v=([^&#]+)/) || youtubeUrl.match(/youtu\.be\/([^&#]+)/);
-    if (match && match[1]) {
-        return `https://www.youtube.com/embed/${match[1]}`;
-    }
-
+    // Fallback to replace watch?v=
     return youtubeUrl.replace("watch?v=", "embed/");
 }
+
 
 
 
