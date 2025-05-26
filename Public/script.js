@@ -372,6 +372,30 @@ function downloadLyrics(filename = "lyrics") {
     }
 }
 
+const voiceBtn = document.getElementById("voiceSearchBtn");
+
+if ('webkitSpeechRecognition' in window) {
+  const recognition = new webkitSpeechRecognition();
+  recognition.lang = 'en-US'; // you can also try 'zh-TW' for Chinese
+
+  voiceBtn.addEventListener('click', () => {
+    recognition.start();
+    voiceBtn.textContent = "🎤 Listening...";
+  });
+
+  recognition.onresult = function (event) {
+    const transcript = event.results[0][0].transcript;
+    document.getElementById("searchInput").value = transcript;
+    voiceBtn.textContent = "🎙️";
+  };
+
+  recognition.onend = () => {
+    voiceBtn.textContent = "🎙️";
+  };
+} else {
+  voiceBtn.disabled = true;
+  voiceBtn.title = "Speech recognition not supported in this browser.";
+}
 
 
 function copyLyrics() {
