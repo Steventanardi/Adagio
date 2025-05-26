@@ -53,18 +53,6 @@ const openai = new OpenAI({
     apiKey: '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', 
 });
 
-// MySQL Database Connection
-//const db = mysql.createConnection({
-//    host: 'localhost',
-//    user: 'root',
-//    password: '',
-//    database: 'adagio'
-//});
-
-//db.connect((err) => {
-//    if (err) throw err;
-//    console.log('Connected to MySQL Database');
-//});
 
 // Set up multer for file uploads
 const storage = multer.diskStorage({
@@ -220,258 +208,114 @@ async function fetchYouTubeVideoUrl(artist, title) {
     return null; 
 }
 
-
-// Function to identify song via AudD
 async function identifySong(filePath) {
-    try {
-        // 🔹 Try ACRCloud first
-        const acrResult = await acrClient.identify(fs.readFileSync(filePath));
-        console.log("🔍 ACRCloud Response:", JSON.stringify(acrResult, null, 2));
-
-        if (acrResult?.metadata?.music?.length > 0) {
-            const song = acrResult.metadata.music[0];
-            const title = song.title;
-            const artist = song.artists[0].name;
-            const album = song.album?.name || '';
-            const releaseDate = song.release_date || '';
-            const label = song.label || '';
-            const videoUrl = await fetchYouTubeVideoUrl(artist, title);
-            const lyrics = await fetchLyrics(artist, title);
-
-            return {
-                success: true,
-                metadata: {
-                    title,
-                    artist,
-                    album,
-                    release_date: releaseDate,
-                    label,
-                    song_link: '',
-                    lyrics,
-                    videoUrl
-                }
-            };
+  // 🔹 1️⃣ Try AudD first
+  try {
+    const form = new FormData();
+    form.append('api_token', AUDD_API_KEY);
+    form.append('file', fs.createReadStream(filePath));
+    const { data } = await axios.post('https://api.audd.io/', form, {
+      headers: form.getHeaders()
+    });
+    if (data.result) {
+      const { title, artist, album, release_date, label, song_link } = data.result;
+      return {
+        success: true,
+        metadata: {
+          title,
+          artist,
+          album:  album || '',
+          release_date: release_date || '',
+          label:  label || '',
+          song_link: song_link || '',
+          lyrics: await fetchLyrics(artist, title),
+          videoUrl: await fetchYouTubeVideoUrl(artist, title)
         }
-
-        console.warn("❌ ACRCloud returned no valid result, trying AudD...");
-    } catch (err) {
-        console.error("❌ ACRCloud error:", err);
+      };
     }
+    console.warn('🔸 AudD returned no match, falling back to ACRCloud…');
+  } catch (err) {
+    console.error('❌ AudD error:', err);
+  }
 
-    // 🔸 Fallback: Try AudD API
-    try {
-        const formData = new FormData();
-        formData.append('api_token', AUDD_API_KEY);
-        formData.append('file', fs.createReadStream(filePath));
-
-        const auddResponse = await axios.post('https://api.audd.io/', formData, {
-            headers: formData.getHeaders(),
-        });
-
-        const result = auddResponse.data.result;
-
-        if (result) {
-            const lyrics = await fetchLyrics(result.artist, result.title);
-
-            return {
-                success: true,
-                metadata: {
-                    title: result.title,
-                    artist: result.artist,
-                    album: result.album || '',
-                    release_date: result.release_date || '',
-                    label: result.label || '',
-                    song_link: result.song_link || '',
-                    lyrics,
-                    videoUrl: await fetchYouTubeVideoUrl(result.artist, result.title)
-                }
-            };
+  // 🔸 2️⃣ Fallback to ACRCloud
+  try {
+    const buffer    = fs.readFileSync(filePath);
+    const acrResult = await acrClient.identify(buffer);
+    if (acrResult?.metadata?.music?.length > 0) {
+      const song = acrResult.metadata.music[0];
+      const title  = song.title;
+      const artist = song.artists[0].name;
+      return {
+        success: true,
+        metadata: {
+          title,
+          artist,
+          album:        song.album?.name   || '',
+          release_date: song.release_date  || '',
+          label:        song.label         || '',
+          song_link:    '',
+          lyrics:       await fetchLyrics(artist, title),
+          videoUrl:     await fetchYouTubeVideoUrl(artist, title)
         }
-    } catch (error) {
-        console.error('❌ AudD error:', error);
+      };
     }
+    console.warn('❌ ACRCloud also returned no match.');
+  } catch (err) {
+    console.error('❌ ACRCloud error:', err);
+  }
 
-    return { success: false, message: 'Unable to identify the song.' };
+  // 🔻 Both services failed
+  return { success: false, message: 'Unable to identify the song.' };
 }
 
 
 
+
+
 // File upload and song recognition
-app.post('/upload-mic-audio', upload.single('musicFile'), async (req, res) => {
-    if (!req.file) {
-        console.error("❌ No file uploaded.");
-        return res.status(400).json({ success: false, message: 'No audio detected.' });
-    }
+app.post('/upload-mic-audio', upload.single('musicFile'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No audio detected.' });
+  }
 
-    console.log("✅ Live audio received:", req.file.path);
-    const filePath = req.file.path;
-    const trimmedPath = `uploads/trimmed-${Date.now()}.mp3`;
+  const filePath = req.file.path;
+  const trimmed  = `uploads/trimmed-${Date.now()}.mp3`;
 
-    ffmpeg(filePath)
-        .audioFilters("highpass=f=200, lowpass=f=3000")
-        .output(trimmedPath)
-        .on('end', async () => {
-            console.log('✅ Audio cleaned and processed.');
-
-            // ✅ Try ACRCloud first
-            try {
-                const acrResult = await acrClient.identify(fs.readFileSync(trimmedPath));
-
-                if (acrResult?.metadata?.music?.length > 0) {
-                    const song = acrResult.metadata.music[0];
-                    const title = song.title;
-                    const artist = song.artists[0].name;
-
-                    const metadata = {
-                        title,
-                        artist,
-                        album: song.album?.name || '',
-                        release_date: song.release_date || '',
-                        label: song.label || '',
-                        song_link: '',
-                        lyrics: await fetchLyrics(artist, title),
-                        videoUrl: await fetchYouTubeVideoUrl(artist, title)
-                    };
-
-                    return res.json({ success: true, metadata });
-                }
-
-                console.warn("❌ ACRCloud gave no results. Falling back to AudD.");
-            } catch (acrError) {
-                console.error("❌ ACRCloud error:", acrError);
-            }
-
-            // 🔁 Fallback to AudD
-            try {
-                const formData = new FormData();
-                formData.append('api_token', AUDD_API_KEY);
-                formData.append('file', fs.createReadStream(trimmedPath));
-
-                const auddResponse = await axios.post('https://api.audd.io/', formData, {
-                    headers: formData.getHeaders(),
-                });
-
-                const result = auddResponse.data.result;
-
-                if (result) {
-                    const metadata = {
-                        title: result.title,
-                        artist: result.artist,
-                        album: result.album || '',
-                        release_date: result.release_date || '',
-                        label: result.label || '',
-                        song_link: result.song_link || '',
-                        lyrics: await fetchLyrics(result.artist, result.title),
-                        videoUrl: await fetchYouTubeVideoUrl(result.artist, result.title)
-                    };
-
-                    return res.json({ success: true, metadata });
-                }
-            } catch (auddError) {
-                console.error("❌ AudD error:", auddError);
-            }
-
-            // ❌ If both fail
-            return res.status(200).json({ success: false, message: 'Unable to recognize the song from microphone input.' });
-        })
-        .on('error', (err) => {
-            console.error('❌ Error processing audio:', err);
-            res.status(500).json({ success: false, message: 'Error processing the audio file.' });
-        })
-        .run();
+  ffmpeg(filePath)
+    .audioFilters('highpass=f=200, lowpass=f=3000')
+    .output(trimmed)
+    .on('end', async () => {
+      const result = await identifySong(trimmed);
+      res.json(result);
+    })
+    .run();
 });
 
 
 
 
 
-app.post('/upload', upload.single('musicFile'), async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ success: false, message: 'No file uploaded.' });
-    }
 
-    const filePath = req.file.path;
-    const trimmedPath = `uploads/trimmed-${Date.now()}.mp3`;
+app.post('/upload', upload.single('musicFile'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded.' });
+  }
 
-    ffmpeg(filePath)
-        .output(trimmedPath)
-        .on('end', async () => {
-            console.log('🎧 Audio trimmed successfully.');
+  const filePath = req.file.path;
+  const trimmed  = `uploads/trimmed-${Date.now()}.mp3`;
 
-            // 🧠 Try AudD first
-            const result = await identifySong(trimmedPath);
-
-            if (result.success) {
-                const metadata = result.metadata || result;
-                const {
-                    title = '',
-                    artist = '',
-                    album = '',
-                    release_date = '',
-                    label = '',
-                    song_link = ''
-                } = metadata;
-
-                const lyrics = metadata.lyrics || await fetchLyrics(artist, title);
-                const videoUrl = metadata.videoUrl || await fetchYouTubeVideoUrl(artist, title);
-
-                return res.json({
-                    success: true,
-                    metadata: {
-                        title,
-                        artist,
-                        album,
-                        release_date,
-                        label,
-                        song_link,
-                        lyrics,
-                        videoUrl
-                    }
-                });
-            }
-
-            // ❌ If AudD fails, fallback to AcrCloud
-            console.log("❌ AudD failed. Trying AcrCloud...");
-
-            try {
-                const acrResult = await acrClient.identify(fs.readFileSync(trimmedPath));
-
-                if (!acrResult || !acrResult.metadata || !acrResult.metadata.music || acrResult.metadata.music.length === 0) {
-                    return res.json({ success: false, message: 'No match found via AcrCloud.' });
-                }
-
-                const song = acrResult.metadata.music[0];
-                const title = song.title || '';
-                const artist = song.artists?.[0]?.name || '';
-
-                const lyrics = await fetchLyrics(artist, title);
-                const videoUrl = await fetchYouTubeVideoUrl(artist, title);
-
-                return res.json({
-                    success: true,
-                    metadata: {
-                        title,
-                        artist,
-                        album: song.album?.name || '',
-                        release_date: song.release_date || '',
-                        label: song.label || '',
-                        song_link: '',
-                        lyrics,
-                        videoUrl
-                    }
-                });
-            } catch (acrError) {
-                console.error('❌ AcrCloud error:', acrError);
-                return res.status(500).json({ success: false, message: 'Recognition failed with both AudD and AcrCloud.' });
-            }
-
-        })
-        .on('error', (err) => {
-            console.error('❌ Error processing audio:', err);
-            res.status(500).json({ success: false, message: 'Error processing the audio file.' });
-        })
-        .run();
+  ffmpeg(filePath)
+    .audioFilters('highpass=f=200, lowpass=f=3000')
+    .output(trimmed)
+    .on('end', async () => {
+      const result = await identifySong(trimmed);
+      res.json(result);
+    })
+    .run();
 });
+
+
 
 
 
