@@ -55,7 +55,7 @@ const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 // Middleware
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('Public'));
 
 // Multer storage configuration
 const storage = multer.diskStorage({
