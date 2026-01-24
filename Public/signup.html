@@ -1,77 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up | Adagio</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-    <!-- Include Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <title>Music Recognition App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
+
+    <button id="themeToggle" class="theme-toggle" title="Toggle Theme">
+        <i class="fas fa-sun"></i>
+    </button>
+
     <div class="sidebar">
         <div class="logo">A.</div>
-        <a href="index.html"><i class="fas fa-home icon"></i></a>
-        <a href="signin.html"><i class="fas fa-user icon"></i></a>
-        <a href="microphone.html"><i class="fa-solid fa-microphone"></i></a>
-        <a href="indevice.html"><i class="fas fa-laptop"></i></a>
-        <a href="upload.html"><i class="fas fa-upload"></i></a>
-        <a href="#"><i class="fas fa-cog icon"></i></a>
-        <div class="spacer"></div>
-        <a href="#"><i class="fas fa-sign-out-alt icon"></i></a>
-    </div> 
-    <div class="signup-container">
-        <div class="signup-box">
-            <h2>Sign Up</h2>
-            <form>
-                <input type="text" placeholder="Full Name" required class="signup-input" name="full_name">
-                <input type="email" placeholder="Email Address" required class="signup-input" name="email">
-                <input type="password" placeholder="Password" required class="signup-input" name="password">
-                <input type="password" placeholder="Confirm Password" required class="signup-input">
-                
-                <button type="submit" class="signup-btn">Sign Up</button>
-            </form>
-            
-            <p class="login-link">Already have an account? <a href="signin.html">Log in</a></p>
-            
-            <div class="divider">Or</div>
-            
-            <div class="social-signup">
-                <button class="social-btn google-signup">Sign up with Google</button>
-                <button class="social-btn facebook-signup">Sign up with Facebook</button>
+        <a href="index.html" title="Home" data-i18n-title="nav.home"><i class="fas fa-home"></i></a>
+        <a href="microphone.html" title="Microphone" data-i18n-title="nav.mic"><i class="fas fa-microphone"></i></a>
+        <a href="indevice.html" title="System Audio" data-i18n-title="nav.indevice"><i class="fas fa-laptop"></i></a>
+        <a href="upload.html" title="Upload File" data-i18n-title="nav.upload"><i class="fas fa-upload"></i></a>
+        <a href="library.html" title="Library" data-i18n-title="nav.library"><i class="fas fa-heart"></i></a>
+        <div class="spacer" style="flex-grow: 1;"></div>
+        <a href="signup.html" class="active" title="Account" data-i18n-title="nav.account"><i
+                class="fas fa-user-circle"></i></a>
+    </div>
+
+    <div class="main-content-wrapper">
+        <div class="container" style="max-width: 500px;">
+            <h1 data-i18n="auth.signup.title">Create Account</h1>
+            <h2 data-i18n="auth.signup.subtitle">Join Adagio to save your discoveries</h2>
+
+            <div class="auth-card">
+                <form id="signupForm">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" name="full_name" placeholder="John Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="email" placeholder="john@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" name="password" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="auth-btn" data-i18n="auth.btn.signup">Sign Up</button>
+                </form>
+                <div class="auth-footer">
+                    <a href="signin.html" data-i18n="auth.link.hasAccount">Already have an account? Sign In</a>
+                </div>
             </div>
         </div>
     </div>
+
+    <script src="script.js"></script>
 
     <script>
         document.getElementById('signupForm').addEventListener('submit', async (event) => {
             event.preventDefault();
             const formData = new FormData(event.target);
             const data = Object.fromEntries(formData.entries());
-        
-            if (data.password !== formData.get('confirm_password')) {
-                alert('Passwords do not match');
-                return;
+
+            try {
+                const response = await fetch('/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                alert(result.message);
+                if (response.ok) window.location.href = 'signin.html';
+            } catch (err) {
+                console.error('Signup error:', err);
+                alert('An error occurred during registration.');
             }
-        
-            const response = await fetch('/signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-        
-            const result = await response.json();
-            alert(result.message);
-            if (response.ok) window.location.href = 'signin.html';
         });
     </script>
-
-    <script>
-        function redirectToHome() {
-            window.location.href = 'index.html';
-        }
-    </script>
 </body>
+
 </html>

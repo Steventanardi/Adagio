@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdagioThesis | My Library</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <button id="themeToggle" class="theme-toggle" title="Toggle Theme">
+        <i class="fas fa-sun"></i>
+    </button>
+
+    <div class="sidebar">
+        <div class="logo">A.</div>
+        <a href="index.html" title="Home" data-i18n-title="nav.home"><i class="fas fa-home"></i></a>
+        <a href="microphone.html" title="Microphone" data-i18n-title="nav.mic"><i class="fas fa-microphone"></i></a>
+        <a href="indevice.html" title="In-Device" data-i18n-title="nav.indevice"><i class="fas fa-laptop"></i></a>
+        <a href="upload.html" title="Upload" data-i18n-title="nav.upload"><i class="fas fa-upload"></i></a>
+        <a href="library.html" title="Library" class="active" data-i18n-title="nav.library"><i
+                class="fas fa-heart"></i></a>
+        <div class="spacer" style="flex-grow: 1;"></div>
+        <a href="signup.html" title="Account" data-i18n-title="nav.account"><i class="fas fa-user-circle"></i></a>
+    </div>
+
+    <div class="main-content-wrapper">
+        <div class="hero">
+            <h1 data-i18n="library.title">My Library</h1>
+            <h2 data-i18n="library.subtitle">Your favorited music discoveries</h2>
+
+            <div id="libraryContainer" class="result-container" style="margin-top: 40px;">
+                <!-- Library items will appear here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const container = document.getElementById('libraryContainer');
+            const token = localStorage.getItem('adagio_token');
+
+            if (!token) {
+                container.innerHTML = '<div class="result-card"><p>Please <a href="signin.html">sign in</a> to view your library.</p></div>';
+                return;
+            }
+
+            container.innerHTML = '<div class="result-card"><p>✨ Loading your collection...</p></div>';
+
+            try {
+                const response = await fetch('/api/library', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    const library = result.library;
+                    const ids = Object.keys(library);
+
+                    if (ids.length === 0) {
+                        container.innerHTML = '<div class="result-card"><p>Your library is empty. Start hearting songs!</p></div>';
+                    } else {
+                        container.innerHTML = '';
+                        ids.forEach(id => {
+                            const song = library[id];
+                            const cardWrapper = document.createElement('div');
+                            cardWrapper.className = 'song-card-wrapper';
+                            cardWrapper.style.marginBottom = '20px';
+                            window.renderSongResult(song, cardWrapper);
+                            container.appendChild(cardWrapper);
+                        });
+                    }
+                } else {
+                    container.innerHTML = `<div class="result-card"><p class="error">${result.message}</p></div>`;
+                }
+            } catch (e) {
+                console.error("Library fetch failed", e);
+                container.innerHTML = '<div class="result-card"><p class="error">Failed to load library. Check your connection.</p></div>';
+            }
+        });
+    </script>
+</body>
+
+</html>

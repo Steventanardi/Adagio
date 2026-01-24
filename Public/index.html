@@ -1,50 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdagioThesis | Intelligent Music Recognition</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-    <!-- Include Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <title>Music Recognition App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
+
+    <button id="themeToggle" class="theme-toggle" title="Toggle Theme">
+        <i class="fas fa-sun"></i>
+    </button>
+
     <div class="sidebar">
         <div class="logo">A.</div>
-        <a href="index.html"><i class="fas fa-home icon"></i></a>
-        <!--<a href="signin.html"><i class="fas fa-user icon"></i></a>-->
-        <a href="microphone.html"><i class="fa-solid fa-microphone"></i></a>
-        <a href="indevice.html"><i class="fas fa-laptop"></i></a>
-        <a href="upload.html"><i class="fas fa-upload"></i></a>
-        <!--<a href="#"><i class="fas fa-cog icon"></i></a>
-        <div class="spacer"></div>
-        <a href="#"><i class="fas fa-sign-out-alt icon"></i></a>-->
+        <a href="index.html" class="active" title="Home" data-i18n-title="nav.home"><i class="fas fa-home"></i></a>
+        <a href="microphone.html" title="Microphone" data-i18n-title="nav.mic"><i class="fas fa-microphone"></i></a>
+        <a href="indevice.html" title="System Audio" data-i18n-title="nav.indevice"><i class="fas fa-laptop"></i></a>
+        <a href="upload.html" title="Upload File" data-i18n-title="nav.upload"><i class="fas fa-upload"></i></a>
+        <a href="library.html" title="Library" data-i18n-title="nav.library"><i class="fas fa-heart"></i></a>
+        <div class="spacer" style="flex-grow: 1;"></div>
+        <a href="signup.html" title="Account" data-i18n-title="nav.account"><i class="fas fa-user-circle"></i></a>
     </div>
+
     <div class="main-content-wrapper">
         <div class="hero">
-            <div class="intro-container">
-                <h1>Hi I'm Adagio,</h1>
-                <h2>Ask me any Music or Songs!</h2>
-                <div class="search-container">
-                <input id="searchInput" ... />
-                <ul id="searchHistory" class="search-history"></ul>
-                <button id="intelligentSearchButton">Search</button>
-                <button id="voiceSearchBtn" title="Voice Search">🎙️</button>
+            <h1>Hi I'm Adagio,</h1>
+            <h2>Ask me any Music or Songs!</h2>
+
+            <div class="mood-picker">
+                <span class="mood-chip" onclick="setMood('🔥 Party')">🔥 Party</span>
+                <span class="mood-chip" onclick="setMood('🌙 Chill')">🌙 Chill</span>
+                <span class="mood-chip" onclick="setMood('💻 Focus')">💻 Focus</span>
+                <span class="mood-chip" onclick="setMood('💔 Sad')">💔 Sad</span>
+                <span class="mood-chip" onclick="setMood('🚀 Hype')">🚀 Hype</span>
+            </div>
+
+            <div class="search-container">
+                <div class="search-input-wrapper">
+                    <button id="humToggle" class="hum-toggle" title="Hum / Sing to Search">
+                        <i class="fas fa-microphone-lines"></i> Hum Mode
+                    </button>
+                    <input type="text" id="searchInput" placeholder="Search for artists, songs, or lyrics...">
+                    <button id="voiceSearchButton" class="voice-search-btn" title="Voice Search">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <button id="intelligentSearchButton">Search</button>
+                </div>
+                <div id="historySection" class="history-section hidden">
+                    <button id="toggleHistory" class="history-toggle">
+                        <i class="fas fa-history"></i> Recent Searches <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="historyWrapper" class="history-wrapper collapsed">
+                        <ul id="searchHistory" class="search-history"></ul>
+                    </div>
                 </div>
             </div>
-            <div id="resultContainer" class="result-container"></div> 
-        </div> 
-    </div>
-      
 
-    <script>
-        function redirectToHome() {
-            window.location.href = 'index.html';
-        }
-    </script>
-    
+            <div id="resultContainer" class="result-container">
+                <!-- Recognition results will appear here -->
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
+
 </html>

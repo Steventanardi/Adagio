@@ -1,50 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internal Audio Recognition | Adagio</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <title>InDevice Music Recognition</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
+
+    <button id="themeToggle" class="theme-toggle" title="Toggle Theme">
+        <i class="fas fa-sun"></i>
+    </button>
+
     <div class="sidebar">
         <div class="logo">A.</div>
-        <a href="index.html"><i class="fas fa-home icon"></i></a>
-        <!--<a href="signin.html"><i class="fas fa-user icon"></i></a>-->
-        <a href="microphone.html"><i class="fa-solid fa-microphone"></i></a>
-        <a href="indevice.html"><i class="fas fa-laptop"></i></a>
-        <a href="upload.html"><i class="fas fa-upload"></i></a>
-        <!--<a href="#"><i class="fas fa-cog icon"></i></a>
-        <div class="spacer"></div>
-        <a href="#"><i class="fas fa-sign-out-alt icon"></i></a>-->
+        <a href="index.html" title="Home" data-i18n-title="nav.home"><i class="fas fa-home"></i></a>
+        <a href="microphone.html" title="Microphone" data-i18n-title="nav.mic"><i class="fas fa-microphone"></i></a>
+        <a href="indevice.html" class="active" title="System Audio" data-i18n-title="nav.indevice"><i
+                class="fas fa-laptop"></i></a>
+        <a href="upload.html" title="Upload File" data-i18n-title="nav.upload"><i class="fas fa-upload"></i></a>
+        <div class="spacer" style="flex-grow: 1;"></div>
     </div>
 
-    <div class="container">
-        <h2>In-Device Music Recognition</h2>
+    <div class="main-content-wrapper">
+        <div class="container">
+            <h1 data-i18n="indevice.title">System Recognition</h1>
+            <h2 data-i18n="indevice.subtitle">Capture and identify audio playing on this device</h2>
 
-        <div class="button-stack">
-            <button id="startRecognition">
-                <i class="fas fa-headphones"></i> Start Recognition
-            </button>
-        
-            <button id="stopRecognition" disabled>
-                <i class="fas fa-stop-circle"></i> Stop Recognition
-            </button>
+            <div style="display: flex; gap: 20px; justify-content: center; margin: 40px 0;">
+                <button id="startRecognition" class="upload-btn">
+                    <i class="fas fa-play" style="margin-right: 10px;"></i> <span data-i18n="indevice.btn.start">Start
+                        Capturing</span>
+                </button>
+
+                <button id="stopRecognition" class="upload-btn btn-stop" disabled>
+                    <i class="fas fa-stop" style="margin-right: 10px;"></i> <span
+                        data-i18n="indevice.btn.stop">Stop</span>
+                </button>
+            </div>
+
+            <p id="recognitionStatus" style="color: var(--text-secondary); margin-bottom: 20px;"
+                data-i18n="indevice.status.ready">Ready to capture system
+                audio</p>
+
+            <div id="recognitionResult" class="result-container">
+                <!-- System audio results will appear here -->
+            </div>
         </div>
-        
-
-
-<p id="recognitionStatus">Click to start capturing system audio.</p>
-
-<div id="recognitionResult" class="result-container">
-    <p>Waiting for recognition...</p>
-</div>
-
     </div>
 
     <script src="script.js"></script>
 </body>
+
 </html>

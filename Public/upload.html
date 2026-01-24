@@ -1,54 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Recognition | Adagio</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-    <!-- Include Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <title>Music Recognition App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
+
+    <button id="themeToggle" class="theme-toggle" title="Toggle Theme">
+        <i class="fas fa-sun"></i>
+    </button>
+
     <div class="sidebar">
         <div class="logo">A.</div>
-        <a href="index.html"><i class="fas fa-home icon"></i></a>
-        <!--<a href="signin.html"><i class="fas fa-user icon"></i></a>-->
-        <a href="microphone.html"><i class="fa-solid fa-microphone"></i></a>
-        <a href="indevice.html"><i class="fas fa-laptop"></i></a>
-        <a href="upload.html"><i class="fas fa-upload"></i></a>
-        <!--<a href="#"><i class="fas fa-cog icon"></i></a>
-        <div class="spacer"></div>
-        <a href="#"><i class="fas fa-sign-out-alt icon"></i></a>-->
+        <a href="index.html" title="Home" data-i18n-title="nav.home"><i class="fas fa-home"></i></a>
+        <a href="microphone.html" title="Microphone" data-i18n-title="nav.mic"><i class="fas fa-microphone"></i></a>
+        <a href="indevice.html" title="System Audio" data-i18n-title="nav.indevice"><i class="fas fa-laptop"></i></a>
+        <a href="upload.html" class="active" title="Upload File" data-i18n-title="nav.upload"><i
+                class="fas fa-upload"></i></a>
+        <div class="spacer" style="flex-grow: 1;"></div>
     </div>
 
-    <div class="container">
-        <div class="upload-container">
-            <h2>Upload File for Music Recognition</h2>
-            
-            <label for="musicInput" class="custom-file-upload">
-                <i class="fas fa-cloud-upload-alt"></i> Choose File
-            </label>
-            <input type="file" id="musicInput" name="musicFile" accept="audio/*" required hidden>
-        
-            <span id="fileName">No file chosen</span>
-        
-            <button type="button" id="uploadButton" class="upload-btn">
-                <i class="fas fa-music"></i> Identify Song
-            </button>
-        
-            <div id="uploadResult" class="result-box hidden">
-                <p>Waiting for recognition...</p>
+    <div class="main-content-wrapper">
+        <div class="container">
+            <h1 data-i18n="upload.title">File Upload</h1>
+            <h2 data-i18n="upload.subtitle">Analyze audio files for identification</h2>
+
+            <div class="upload-area" id="dropZone">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div class="upload-text">
+                    <p id="fileNameDisplay">Select or Drop Audio File</p>
+                    <span>Supports MP3, WAV, M4A, etc.</span>
+                </div>
+                <button class="select-file-btn" onclick="document.getElementById('musicInput').click()">
+                    Choose File
+                </button>
+                <input type="file" id="musicInput" accept="audio/*,video/*" style="display: none;">
+            </div>
+
+            <button id="uploadButton" class="upload-btn" data-i18n="upload.btn">Upload & Analyze</button>
+
+            <div id="uploadResult" class="result-container">
+                <!-- Upload results will appear here -->
             </div>
         </div>
-        
-
-        <div id="uploadResult" class="result-container">
-        </div>
-        
     </div>
 
     <script src="script.js"></script>
 </body>
+
 </html>
