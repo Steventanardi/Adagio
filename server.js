@@ -10,8 +10,6 @@ const FormData = require('form-data');
 const cheerio = require('cheerio');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { OpenAI } = require('openai');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fetch = require('node-fetch');
 
 // Set FFmpeg path
@@ -29,16 +27,10 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 console.log(`🔑 JWT Secret: ${process.env.JWT_SECRET ? 'Loaded from secret.env' : 'Using default fallback (Warning!)'}`);
 const DB_PATH = path.join(__dirname, 'data', 'users.json');
-const DEFAULT_MODEL = 'gpt-4o';
-
-// Initialize OpenAI API (No hardcoded fallback as per user request)
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-}) : null;
-
-// Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const geminiModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+// ── Local-only Ollama config ──────────────────────────────────────────────
+const OLLAMA_MODEL   = 'qwen3.5:9b';
+const OLLAMA_URL     = 'http://localhost:11434/api/chat';  // native endpoint — supports think:false properly
+const OLLAMA_TIMEOUT = 90_000; // 90s — covers cold-start; warm calls = 3–8s
 
 // Set up AcrCloud config
 const acrClient = new AcrCloud({
@@ -154,68 +146,68 @@ function parseAIResponse(text) {
     return null;
 }
 
-// Helper: Universal AI Caller (Gemini -> OpenAI -> Local Fallback)
-async function callAI(systemPrompt, userPrompt, temperature = 0.7) {
-    console.log(`🤖 AI Call Requesting: ${userPrompt.substring(0, 50)}...`);
-
-    // 1. Try Gemini
-    if (process.env.GEMINI_API_KEY) {
-        try {
-            console.log("💎 Attempting Gemini...");
-            const result = await geminiModel.generateContent({
-                contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nUser Request: ${userPrompt}` }] }],
-                generationConfig: { temperature, maxOutputTokens: 1000 }
-            });
-            const response = await result.response;
-            const text = response.text();
-            if (text) return text;
-        } catch (e) {
-            console.warn("⚠️ Gemini failed:", e.message);
-        }
-    }
-
-    // 2. Try OpenAI
-    if (openai) {
-        try {
-            console.log("📡 Attempting OpenAI...");
-            const chatResponse = await openai.chat.completions.create({
-                model: DEFAULT_MODEL,
+// ── Local AI caller — Ollama only ────────────────────────────────────────
+async function callAI(systemPrompt, userPrompt, temperature = 0.7, maxTokens = 400, label = 'AI') {
+    console.log(`🤖 AI [${label}]: ${userPrompt.substring(0, 60)}...`);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT);
+    try {
+        const response = await fetch(OLLAMA_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+            body: JSON.stringify({
+                model: OLLAMA_MODEL,
                 messages: [
                     { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt }
+                    { role: 'user',   content: userPrompt   }
                 ],
-                temperature: temperature
-            });
-            return chatResponse.choices[0].message.content.trim();
-        } catch (e) {
-            console.warn("⚠️ OpenAI failed:", e.message);
+                stream: false,
+                think: false,         // native endpoint properly suppresses Qwen3 thinking
+                keep_alive: -1,       // keep model in VRAM — eliminates cold-start
+                options: {
+                    temperature,
+                    num_ctx: 2048,    // small context window = faster first-token
+                    num_predict: maxTokens
+                }
+            })
+        });
+        clearTimeout(timer);
+        if (response.ok) {
+            const data = await response.json();
+            const text = data.message?.content?.trim(); // native /api/chat response shape
+            if (text) { console.log(`✅ Ollama done [${label}]`); return text; }
+            throw new Error('Empty response from model');
         }
+        throw new Error(`Ollama HTTP ${response.status}`);
+    } catch (e) {
+        clearTimeout(timer);
+        const msg = e.name === 'AbortError' ? 'Ollama timed out (90s)' : e.message;
+        console.error(`❌ AI failed: ${msg}`);
+        throw new Error(`Local AI unavailable: ${msg}. Is Ollama running?`);
     }
+}
 
-    // 4. Try Local LLM (LM Studio - Default Port 1234)
+// ── Model warmup (called once at startup) ────────────────────────────────
+async function warmupModel() {
+    console.log(`🔥 Warming up Ollama model (${OLLAMA_MODEL})...`);
     try {
-        console.log("🏠 Attempting LM Studio (1234)...");
-        // Using fetch directly for LM Studio to avoid dependency on global 'openai' instance
-        const response = await fetch('http://localhost:1234/v1/chat/completions', {
+        await fetch(OLLAMA_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: 'loaded-model',
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt }
-                ],
-                temperature: temperature
-            }),
-            timeout: 10000
+                model: OLLAMA_MODEL,
+                messages: [{ role: 'user', content: 'hi' }],
+                stream: false,
+                think: false,
+                keep_alive: -1,
+                options: { num_ctx: 512, num_predict: 1 }
+            })
         });
-        const data = await response.json();
-        return data.choices[0].message.content.trim();
+        console.log(`✅ Ollama model is warm and ready!`);
     } catch (e) {
-        console.warn("⚠️ LM Studio failed:", e.message);
+        console.warn(`⚠️ Warmup failed — is Ollama running? (${e.message})`);
     }
-
-    throw new Error("All AI providers failed. Please check your API keys or ensure your local LLM (Ollama/LM Studio) is running.");
 }
 
 // Helper: YouTube Search
@@ -506,9 +498,10 @@ app.post('/api/deep-lyrics', async (req, res) => {
     const { text, artist, title } = req.body;
     if (!text) return res.status(400).json({ success: false });
     try {
-        const systemPrompt = 'You are a savvy music critic. Explain the deeper meaning of these lyrics concisely (under 50 words).';
-        const userPrompt = `Explain these lyrics from "${title}" by "${artist}": "${text}"`;
-        const aiText = await callAI(systemPrompt, userPrompt, 0.8);
+        const systemPrompt = 'Music critic. Explain deeper meaning in under 40 words. Be direct, no preamble.';
+        const truncatedText = text.substring(0, 300); // only send a snippet
+        const userPrompt = `"${title}" by "${artist}": "${truncatedText}"`;
+        const aiText = await callAI(systemPrompt, userPrompt, 0.7, 120, 'Deep Lyrics');
         res.json({ success: true, explanation: aiText });
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
@@ -519,8 +512,8 @@ app.post('/intelligent-search', async (req, res) => {
     const { query } = req.body;
     if (!query) return res.status(400).json({ success: false });
     try {
-        const systemPrompt = 'Respond ONLY with a JSON array of up to 5 song objects with "title" and "artist".';
-        const aiText = await callAI(systemPrompt, query, 0.9);
+        const systemPrompt = 'Reply ONLY with a JSON array of 5 objects: [{"title":"...","artist":"..."}]. No explanation.';
+        const aiText = await callAI(systemPrompt, query.substring(0, 200), 0.7, 200, 'Intelligent Search');
         const songs = parseAIResponse(aiText) || [];
         res.json({ success: true, songs });
     } catch (e) {
@@ -532,9 +525,9 @@ app.post('/api/recommendations', async (req, res) => {
     const { artist, title } = req.body;
     if (!artist || !title) return res.status(400).json({ success: false });
     try {
-        const systemPrompt = 'Respond ONLY with a JSON array of 5 similar songs (title and artist).';
-        const userPrompt = `Similar to "${title}" by "${artist}"`;
-        const aiText = await callAI(systemPrompt, userPrompt);
+        const systemPrompt = 'Reply ONLY with a JSON array of 5 objects: [{"title":"...","artist":"..."}]. No explanation.';
+        const userPrompt = `Songs similar to "${title}" by "${artist}"`;
+        const aiText = await callAI(systemPrompt, userPrompt, 0.7, 200, 'Recommendations');
         const suggested = parseAIResponse(aiText) || [];
         const token = await getSpotifyAccessToken();
         const recommendations = await Promise.all(suggested.map(async s => {
@@ -559,9 +552,11 @@ app.post('/api/recommendations', async (req, res) => {
 app.post('/api/mood', async (req, res) => {
     const { artist, title, lyrics } = req.body;
     try {
-        const systemPrompt = 'Respond ONLY with a JSON object: {"mood": string, "color1": hex, "color2": hex}. Use dark colors.';
-        const userPrompt = lyrics ? `Analyze mood: ${lyrics.substring(0, 500)}` : `Analyze mood of "${title}" by "${artist}"`;
-        const aiText = await callAI(systemPrompt, userPrompt);
+        const systemPrompt = 'Reply ONLY with JSON: {"mood":"word","color1":"#hex","color2":"#hex"}. Dark colors only.';
+        const userPrompt = lyrics
+            ? `Mood of: ${lyrics.substring(0, 200)}`
+            : `Mood of "${title}" by "${artist}"`;
+        const aiText = await callAI(systemPrompt, userPrompt, 0.5, 80, 'Mood Analysis');
         const mood = parseAIResponse(aiText) || { mood: 'Neutral', color1: '#1e1e2f', color2: '#2a2a40' };
         res.json({ success: true, ...mood });
     } catch (e) {
@@ -573,8 +568,10 @@ app.post('/api/translate', async (req, res) => {
     const { text } = req.body;
     if (!text) return res.status(400).json({ success: false });
     try {
-        const systemPrompt = 'Translate the following lyrics to English. Respond ONLY with the translated text.';
-        const translatedText = await callAI(systemPrompt, text, 0.3);
+        const systemPrompt = 'Translate to English. Reply ONLY with the translated text, nothing else.';
+        const truncated = text.substring(0, 600); // cap input to avoid huge context
+        const maxOut = Math.min(Math.ceil(truncated.length * 1.5), 600); // proportional output cap
+        const translatedText = await callAI(systemPrompt, truncated, 0.3, maxOut, 'Translation');
         res.json({ success: true, translatedText });
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
@@ -615,6 +612,32 @@ app.post('/api/library/add', (req, res) => {
     }
 });
 
+// ── AI health-check endpoint ─────────────────────────────────────────────
+app.get('/api/ai-status', async (req, res) => {
+    try {
+        const r = await fetch(OLLAMA_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: OLLAMA_MODEL,
+                messages: [{ role: 'user', content: 'ping' }],
+                max_tokens: 1, stream: false, keep_alive: -1,
+                options: { think: false, num_ctx: 512, num_predict: 1 }
+            })
+        });
+        if (r.ok) {
+            res.json({ status: 'ok', model: OLLAMA_MODEL, local: true });
+        } else {
+            res.status(503).json({ status: 'error', message: `Ollama HTTP ${r.status}` });
+        }
+    } catch (e) {
+        res.status(503).json({ status: 'error', message: e.message });
+    }
+});
+
+// ── Startup ───────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-    console.log(`✅ Server is running on http://localhost:${PORT}`);
+    console.log(`✅ Server running at http://localhost:${PORT}`);
+    console.log(`🦙 AI model: ${OLLAMA_MODEL} (fully local, no cloud APIs)`);
+    warmupModel(); // fire-and-forget: loads model into VRAM immediately
 });
