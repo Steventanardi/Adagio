@@ -32,7 +32,7 @@
     "node-fetch": "^2.7.0",
     "openai": "^4.26.0",
     "punycode": "^2.3.1",
-    "ytsr": "^3.8.4"
+    "youtube-sr": "^4.3.12"
   },
   "repository": {
     "type": "git",

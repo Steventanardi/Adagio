@@ -26,6 +26,11 @@ export async function fetchYouTubeVideoAPI(title, artist) {
     return await res.json();
 }
 
+export async function fetchLyricsAPI(title, artist) {
+    const res = await fetch(`/api/lyrics?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`);
+    return await res.json();
+}
+
 export async function uploadMicAudioAPI(formData, controller) {
     const response = await fetch('/upload-mic-audio', {
         method: 'POST',

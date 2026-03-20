@@ -36,6 +36,10 @@ async function fetchLyrics(artist, title) {
 
         const html = await fetch(bestMatch.url, { timeout: 8000 }).then(res => res.text());
         const $ = cheerio.load(html);
+        
+        // Convert <br> tags to actual newlines before extracting text so it doesn't mash together
+        $('br').replaceWith('\n');
+        
         let lyrics = '';
         $('[data-lyrics-container]').each((_, el) => {
             lyrics += $(el).text().trim() + '\n\n';
@@ -45,6 +49,20 @@ async function fetchLyrics(artist, title) {
                 lyrics += $(el).text().trim() + '\n\n';
             });
         }
+        
+        // Remove Genius scraping garbage header (e.g., "69 Contributors Translations... Lyrics")
+        if (/^\d+\s*Contributors/i.test(lyrics)) {
+            // Usually, real lyrics start with a section header like "[Verse 1]"
+            const firstBracketIndex = lyrics.indexOf('[');
+            if (firstBracketIndex !== -1) {
+                // Strip EVERYTHING before the first bracket, completely ignoring the metadata garbage
+                lyrics = lyrics.substring(firstBracketIndex);
+            } else {
+                // If no bracket exists, fall back to stripping everything up to the word "Lyrics"
+                lyrics = lyrics.replace(/^[\s\S]*?Lyrics/i, '').trim();
+            }
+        }
+
         return lyrics.replace(/(\n\s*){3,}/g, '\n\n').trim() || null;
     } catch (err) {
         console.error("❌ Genius lyrics error:", err.message);

@@ -161,7 +161,20 @@ router.get('/api/youtube-video', async (req, res) => {
     if (!title || !artist) return res.status(400).json({ success: false, message: 'Missing title or artist' });
     try {
         const videoUrl = await fetchYouTubeVideoUrl(artist, title);
-        res.json({ success: !!videoUrl, videoUrl });
+        res.json({ success: true, videoUrl });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// Lyrics Helper Endpoint
+const { fetchLyrics } = require('../services/lyrics');
+router.get('/api/lyrics', async (req, res) => {
+    const { title, artist } = req.query;
+    if (!title || !artist) return res.status(400).json({ success: false, message: 'Missing title or artist' });
+    try {
+        const lyrics = await fetchLyrics(artist, title);
+        res.json({ success: true, lyrics });
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
     }

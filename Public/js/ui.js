@@ -1,5 +1,5 @@
 import { sanitizeHTML, convertToEmbedUrl } from './utils.js';
-import { fetchMoodAPI, fetchRecommendationsAPI, toggleFavoriteAPI, translateLyricsAPI, deepLyricsAPI } from './api.js';
+import { fetchMoodAPI, fetchRecommendationsAPI, toggleFavoriteAPI, translateLyricsAPI, deepLyricsAPI, fetchYouTubeVideoAPI, fetchLyricsAPI } from './api.js';
 
 export function updateAuthUI(isLoggedIn) {
     const accountLink = document.querySelector('.sidebar a[href*="signup"]');
@@ -91,7 +91,10 @@ export function renderSongResult(data, targetElement) {
                     <h4><i class="fas fa-scroll"></i> Lyrics <span class="lyrics-hint">(Click lines for meaning)</span></h4>
                     <button class="translate-btn" data-action="translate" data-song-id="${songId}">AI Translate</button>
                 </div>
-                <pre id="lyrics-${songId}" class="lyrics-text">${processLyrics(data.lyrics, songId)}</pre>
+                <div class="lyrics-wrapper" id="lyrics-wrapper-${songId}">
+                    <pre id="lyrics-${songId}" class="lyrics-text">${processLyrics(data.lyrics, songId)}</pre>
+                </div>
+                <button class="show-more-lyrics" data-action="toggle-lyrics" data-target="lyrics-wrapper-${songId}">Show Full Lyrics</button>
                 <div id="raw-lyrics-${songId}" style="display:none;">${sanitizeHTML(data.lyrics)}</div>
             </div>` : ''
         }
@@ -115,6 +118,47 @@ export function renderSongResult(data, targetElement) {
         targetElement.dataset.proLoaded = "true";
         updateMoodUI(data.artist, data.title, data.lyrics, targetElement);
         renderRecommendations(data.artist, data.title, targetElement);
+        
+        const card = targetElement.querySelector('.result-card');
+        
+        // If search results didn't already have a video, fetch one now
+        if (!data.videoUrl && card) {
+            fetchYouTubeVideoAPI(data.title, data.artist).then(res => {
+                if (res.success && res.videoUrl) {
+                    const platformLinks = card.querySelector('.platform-links');
+                    const videoContainer = document.createElement('div');
+                    videoContainer.className = 'video-container';
+                    videoContainer.innerHTML = `<iframe src="${convertToEmbedUrl(res.videoUrl)}" allowfullscreen></iframe>`;
+                    platformLinks.after(videoContainer);
+                }
+            }).catch(e => console.error("Auto YouTube fetch failed", e));
+        }
+
+        // If search results didn't already have lyrics, fetch them now
+        if (!data.lyrics && card) {
+            fetchLyricsAPI(data.title, data.artist).then(res => {
+                if (res.success && res.lyrics) {
+                    const actions = card.querySelector('.result-actions');
+                    const lyricsDiv = document.createElement('div');
+                    lyricsDiv.className = 'result-content lyrics-container';
+                    lyricsDiv.innerHTML = `
+                        <div class="header-row">
+                            <h4><i class="fas fa-scroll"></i> Lyrics <span class="lyrics-hint">(Click lines for meaning)</span></h4>
+                            <button class="translate-btn" data-action="translate" data-song-id="${songId}">AI Translate</button>
+                        </div>
+                        <div class="lyrics-wrapper" id="lyrics-wrapper-${songId}">
+                            <pre id="lyrics-${songId}" class="lyrics-text">${processLyrics(res.lyrics, songId)}</pre>
+                        </div>
+                        <button class="show-more-lyrics" data-action="toggle-lyrics" data-target="lyrics-wrapper-${songId}">Show Full Lyrics</button>
+                        <div id="raw-lyrics-${songId}" style="display:none;">${sanitizeHTML(res.lyrics)}</div>
+                    `;
+                    actions.before(lyricsDiv);
+                    
+                    // Also trigger a mood update now that we have lyrics
+                    updateMoodUI(data.artist, data.title, res.lyrics, targetElement);
+                }
+            }).catch(e => console.error("Auto Lyrics fetch failed", e));
+        }
     }
 }
 
@@ -230,3 +274,16 @@ export function showTimeoutFeedback(element, baseMessage) {
 export function clearTimeoutFeedback() {
     clearInterval(timeoutInterval);
 }
+
+// Global event listener for lyrics toggle (event delegation)
+document.addEventListener('click', (e) => {
+    const toggleBtn = e.target.closest('[data-action="toggle-lyrics"]');
+    if (toggleBtn) {
+        const targetId = toggleBtn.getAttribute('data-target');
+        const wrapper = document.getElementById(targetId);
+        if (wrapper) {
+            const isExpanded = wrapper.classList.toggle('expanded');
+            toggleBtn.innerText = isExpanded ? 'Show Less' : 'Show Full Lyrics';
+        }
+    }
+});

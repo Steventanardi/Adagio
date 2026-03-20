@@ -1,4 +1,5 @@
 const fetch = require('node-fetch');
+const YouTube = require('youtube-sr').default;
 
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
@@ -8,109 +9,101 @@ function scoreVideo(vidTitle, vidAuthor, cleanTitle, cleanArtist) {
     
     const t = vidTitle.toLowerCase();
     const a = (vidAuthor || '').toLowerCase();
-    const wt = cleanTitle.toLowerCase();
-    const wa = cleanArtist.toLowerCase();
-    
-    // STRICT FILTER: The video title MUST contain the core song title,
-    // and either the title or the author MUST contain the artist name.
-    // If not, it's immediately disqualified.
-    if (!t.includes(wt)) return -100;
-    if (!t.includes(wa) && !a.includes(wa)) return -100;
+    const targetTitle = cleanTitle.toLowerCase();
+    const targetArtist = cleanArtist.toLowerCase();
 
     let score = 0;
+
+    // Check for exact title match (best)
+    if (t === targetTitle) score += 30;
+    else if (t.includes(targetTitle)) score += 15;
+
+    // Check for artist match
+    if (a.includes(targetArtist) || targetArtist.includes(a)) score += 15;
     
-    // Exact/Strong matches (Baseline points since we passed the strict filter)
-    score += 10; // For title match
-    if (t.includes(wa)) score += 5;
-    if (a.includes(wa)) score += 10; // Author/Channel name matches artist is a strong signal
+    // Boost official videos
+    if (t.includes('official') || t.includes('mv')) score += 5;
     
-    // Official indicators
-    if (t.includes('official')) score += 5;
-    if (t.includes('mv') || t.includes('music video')) score += 5;
-    if (t.includes('audio')) score += 2; // Official audio is okay if no MV
-    
-    // Penalize unofficial/irrelevant content
-    const penaltyTerms = [
-        'cover', 'live', 'lyrics', 'lyric', 'remix', 'karaoke', 
-        'reaction', 'short', 'tiktok', 'instrumental', 'bass boosted',
-        '8d', 'slowed', 'reverb', 'chipmunk', 'nightcore', 'tutorial',
-        'how to play', 'guitar', 'piano', 'chords', 'tabs'
-    ];
-    
-    for (const term of penaltyTerms) {
-        // Apply heavy penalty if title contains unwanted terms and the actual song isn't named that
-        if (t.includes(term) && !wt.includes(term)) {
-            score -= 15;
-        }
-    }
-    
-    // Slight penalty for very long titles (often compilations or weird mixes)
-    if (t.length > 80) score -= 3;
-    
+    // Penalize low-quality keywords
+    if (t.includes('cover') || t.includes('remix') || t.includes('karaoke') || t.includes('instrumental')) score -= 20;
+
     return score;
 }
 
-// Helper: YouTube Search
+/**
+ * Searches for a YouTube video URL for a given song.
+ * Uses official API first, falls back to youtube-sr scraper if key is missing or quota met.
+ */
 async function fetchYouTubeVideoUrl(artist, title) {
-    const cleanTitle  = title.split('(')[0].split('-')[0].trim();
     const cleanArtist = artist.split('feat')[0].split('ft.')[0].trim();
-    const searchQuery = `${cleanArtist} ${cleanTitle} official music video`;
+    const cleanTitle = title.split('(')[0].split('-')[0].trim();
+    const searchQuery = `${cleanArtist} ${cleanTitle}`;
 
-    // 1. Official YouTube Data API v3
+    // 1. Official API Attempt (Best)
     if (YOUTUBE_API_KEY && YOUTUBE_API_KEY !== 'YOUR_YOUTUBE_API_KEY_HERE') {
-        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&key=${YOUTUBE_API_KEY}&type=video&maxResults=10`;
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&maxResults=5&type=video&key=${YOUTUBE_API_KEY}`;
         try {
             const response = await fetch(url, { timeout: 5000 });
             const data = await response.json();
-            if (data.items && data.items.length > 0) {
+
+            // Check for API-level errors (like 403 Forbidden / Quota Exceeded)
+            if (data.error) {
+                console.error(`❌ YouTube API Error [${data.error.code}]: ${data.error.message}`);
+                if (data.error.errors?.[0]?.reason === 'quotaExceeded') {
+                    console.error('⚠️ YouTube API Daily Quota Limit Reached! Falling back to youtube-sr...');
+                }
+            } else if (data.items && data.items.length > 0) {
                 const best = data.items
+                    .filter(item => item.id && item.id.videoId)
                     .map(item => ({ 
                         id: item.id.videoId, 
                         score: scoreVideo(item.snippet.title, item.snippet.channelTitle, cleanTitle, cleanArtist) 
                     }))
                     .sort((a, b) => b.score - a.score)[0];
                     
-                if (best && best.score > 0) {
+                if (best) {
                     console.log(`✅ YouTube API: ${best.id} (score ${best.score})`);
                     return `https://www.youtube.com/watch?v=${best.id}`;
                 } else {
-                    console.log(`⚠️ YouTube API found videos, but none matched the strict criteria for "${title}".`);
+                    console.log(`ℹ️ YouTube API found items but none were high-quality matches. Falling back...`);
                 }
+            } else {
+                console.log(`ℹ️ YouTube API returned 0 results for "${searchQuery}". Falling back...`);
             }
         } catch (error) {
-            console.error('❌ YouTube API error:', error.message);
+            console.error('❌ YouTube API Connection error:', error.message);
         }
     } else {
-        console.log('⚠️ YouTube API key missing, falling back to ytsr headless scraper...');
+        console.log('⚠️ YouTube API key missing, falling back to youtube-sr...');
     }
     
-    // 2. Headless Scraping Fallback (ytsr)
+    // 2. Headless Scraping Fallback (youtube-sr) - Sturdier than ytsr
     try {
-        const ytsr = require('ytsr');
-        console.log(`📡 ytsr: searching for "${searchQuery}"`);
-        const searchOptions = { limit: 15, gl: 'US', hl: 'en' };
-        const ytsrResults = await ytsr(searchQuery, searchOptions);
+        console.log(`📡 youtube-sr: searching for "${searchQuery}"`);
+        // youtube-sr doesn't spam console with GitHub issue prompts
+        const searchResults = await YouTube.search(searchQuery, { limit: 10, type: 'video' });
         
-        const best = ytsrResults.items
-            .filter(item => item.type === 'video')
-            .map(item => ({ 
-                id: item.url?.includes('v=') ? item.url.split('v=')[1].split('&')[0] : null, 
-                score: scoreVideo(item.title, item.author?.name, cleanTitle, cleanArtist) 
-            }))
-            .filter(item => item.id !== null)
-            .sort((a, b) => b.score - a.score)[0];
+        if (!searchResults || searchResults.length === 0) {
+             console.log(`ℹ️ youtube-sr returned 0 results for "${searchQuery}".`);
+             return null;
+        }
+
+        const videos = searchResults.map(item => ({
+            id: item.id,
+            score: scoreVideo(item.title, item.channel?.name, cleanTitle, cleanArtist)
+        }));
             
-        if (best && best.score > 0) {
-            console.log(`✅ ytsr fallback match: ${best.id} (score ${best.score})`);
+        const best = videos.sort((a, b) => b.score - a.score)[0];
+            
+        if (best) {
+            console.log(`✅ youtube-sr fallback match: ${best.id} (score ${best.score})`);
             return `https://www.youtube.com/watch?v=${best.id}`;
         }
     } catch (e) {
-        console.error('❌ ytsr fallback error:', e.message);
+        console.error('❌ youtube-sr fallback critical error:', e.message);
     }
 
     return null;
 }
 
-module.exports = {
-    fetchYouTubeVideoUrl
-};
+module.exports = { fetchYouTubeVideoUrl };
