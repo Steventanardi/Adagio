@@ -1,6 +1,62 @@
 import { sanitizeHTML, convertToEmbedUrl } from './utils.js';
 import { fetchMoodAPI, fetchRecommendationsAPI, toggleFavoriteAPI, translateLyricsAPI, deepLyricsAPI, fetchYouTubeVideoAPI, fetchLyricsAPI } from './api.js';
 
+let floatingPlayer = null;
+export function initFloatingPlayer() {
+    if (floatingPlayer || typeof document === 'undefined') return;
+    floatingPlayer = document.createElement('div');
+    floatingPlayer.id = 'floatingPlayer';
+    floatingPlayer.className = 'floating-player';
+    floatingPlayer.innerHTML = `
+        <div class="fp-info">
+            <div class="fp-thumb"></div>
+            <div class="fp-text">
+                <div class="fp-title">Select a song</div>
+                <div class="fp-artist">Adagio Premium</div>
+            </div>
+        </div>
+        <div class="fp-controls">
+            <button class="fp-btn" title="Previous"><i class="fas fa-backward-step"></i></button>
+            <button class="fp-btn fp-play-btn" title="Play/Pause"><i class="fas fa-play"></i></button>
+            <button class="fp-btn" title="Next"><i class="fas fa-forward-step"></i></button>
+        </div>
+        <button class="fp-btn fp-close" title="Close Player"><i class="fas fa-times"></i></button>
+    `;
+    document.body.appendChild(floatingPlayer);
+    
+    floatingPlayer.querySelector('.fp-close').onclick = () => floatingPlayer.classList.remove('active');
+    
+    // Play/Pause Logic
+    const playBtn = floatingPlayer.querySelector('.fp-play-btn');
+    playBtn.onclick = () => {
+        const isPlaying = floatingPlayer.classList.toggle('playing');
+        playBtn.querySelector('i').className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+        
+        // Try to control the YouTube iframe
+        const iframe = document.querySelector('iframe');
+        if (iframe && iframe.contentWindow) {
+            const command = isPlaying ? 'playVideo' : 'pauseVideo';
+            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: command, args: [] }), '*');
+        }
+    };
+
+    console.log("✅ Floating Player initialized in DOM");
+}
+
+function updateFloatingPlayer(title, artist) {
+    if (!floatingPlayer) initFloatingPlayer();
+    // Use innerHTML for title/artist to handle entities, OR ensure raw strings are passed.
+    // Given they come sanitized, we unescape briefly for display.
+    const temp = document.createElement('div');
+    temp.innerHTML = title;
+    floatingPlayer.querySelector('.fp-title').innerText = temp.innerText;
+    temp.innerHTML = artist;
+    floatingPlayer.querySelector('.fp-artist').innerText = temp.innerText;
+    
+    floatingPlayer.classList.add('active', 'playing');
+    floatingPlayer.querySelector('.fp-play-btn i').className = 'fas fa-pause';
+}
+
 export function updateAuthUI(isLoggedIn) {
     const accountLink = document.querySelector('.sidebar a[href*="signup"]');
     if (accountLink) {
@@ -81,7 +137,7 @@ export function renderSongResult(data, targetElement) {
 
         ${data.videoUrl ? `
             <div class="video-container">
-                <iframe src="${convertToEmbedUrl(data.videoUrl)}" allowfullscreen></iframe>
+                <iframe src="${convertToEmbedUrl(data.videoUrl)}?enablejsapi=1" allowfullscreen></iframe>
             </div>` : ''
         }
 
@@ -121,6 +177,12 @@ export function renderSongResult(data, targetElement) {
         
         const card = targetElement.querySelector('.result-card');
         
+        // Only update floating player if explicitly requested (e.g. for the top result)
+        // or if it was the ONLY result.
+        if (data.autoPlayTrack) {
+            updateFloatingPlayer(title, artist);
+        }
+
         // If search results didn't already have a video, fetch one now
         if (!data.videoUrl && card) {
             fetchYouTubeVideoAPI(data.title, data.artist).then(res => {
@@ -128,7 +190,7 @@ export function renderSongResult(data, targetElement) {
                     const platformLinks = card.querySelector('.platform-links');
                     const videoContainer = document.createElement('div');
                     videoContainer.className = 'video-container';
-                    videoContainer.innerHTML = `<iframe src="${convertToEmbedUrl(res.videoUrl)}" allowfullscreen></iframe>`;
+                    videoContainer.innerHTML = `<iframe src="${convertToEmbedUrl(res.videoUrl)}?enablejsapi=1" allowfullscreen></iframe>`;
                     platformLinks.after(videoContainer);
                 }
             }).catch(e => console.error("Auto YouTube fetch failed", e));

@@ -198,7 +198,7 @@ router.post('/intelligent-search', async (req, res) => {
     const { query } = req.body;
     if (!query) return res.status(400).json({ success: false });
     try {
-        const systemPrompt = 'Reply ONLY with a JSON array of EXACTLY 5 objects. Example: [{"title":"Blinding Lights","artist":"The Weeknd"}]. CRITICAL RULES: 1. Provide ACTUAL real-world artists. 2. NEVER include the artist name inside the title field. 3. Think outside the box and provide a highly diverse, unique mix of exactly 5 songs that fit the user prompt. Avoid repeating generic pop hits unless specifically asked.';
+        const systemPrompt = 'Reply ONLY with a JSON array of EXACTLY 5 objects. Example: [{"title":"Blinding Lights","artist":"The Weeknd"}]. CRITICAL RULES: 1. Provide ONLY real-world songs by established artists. 2. NEVER include the artist name inside the title field. 3. Think outside the box and provide a highly diverse, unique mix of exactly 5 songs that fit the user prompt. Avoid repeating generic pop hits unless specifically asked. 4. Double-check yourself: only provide songs you are 100% sure exist.';
         // Raised temperature to 0.85 for heavily diverse recommendations
         const aiText = await callAI(systemPrompt, query.substring(0, 200) + ' (Return exactly 5 songs)', 0.85, 200, 'Intelligent Search');
         
@@ -223,7 +223,7 @@ router.post('/api/recommendations', async (req, res) => {
     const { artist, title } = req.body;
     if (!artist || !title) return res.status(400).json({ success: false });
     try {
-        const systemPrompt = 'Reply ONLY with a JSON array of EXACTLY 5 objects. Example: [{"title":"Blinding Lights","artist":"The Weeknd"}]. CRITICAL RULES: 1. Provide ACTUAL real-world artists. 2. NEVER include the artist name inside the title field. 3. Provide a highly diverse, unique mix of exactly 5 similar songs. Avoid repeating generic pop hits.';
+        const systemPrompt = 'Reply ONLY with a JSON array of EXACTLY 5 objects. Example: [{"title":"Blinding Lights","artist":"The Weeknd"}]. CRITICAL RULES: 1. Provide ONLY real-world songs by established artists. 2. NEVER include the artist name inside the title field. 3. Provide a highly diverse, unique mix of exactly 5 similar songs. Avoid repeating generic pop hits. 4. Double-check yourself: only provide songs you are 100% sure exist.';
         const userPrompt = `Provide exactly 5 songs similar to "${title}" by "${artist}"`;
         // Raised temperature to 0.85 to un-bias the local model
         const aiText = await callAI(systemPrompt, userPrompt, 0.85, 200, 'Recommendations');

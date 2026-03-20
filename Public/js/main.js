@@ -1,7 +1,7 @@
 import { getSavedTheme, setAdagioTheme, saveToHistory, getHistory, sanitizeHTML } from './utils.js';
 import { fetchLibraryAPI, searchIntelligentAPI, fetchYouTubeVideoAPI, uploadMicAudioAPI, uploadInDeviceAudioAPI, uploadFileAPI, toggleFavoriteAPI, translateLyricsAPI, fetchRecommendationsAPI } from './api.js';
 import { startVisualizer } from './audio.js';
-import { updateAuthUI, updateFileName, renderSongResult, explainLyricsUI, showTimeoutFeedback, clearTimeoutFeedback } from './ui.js';
+import { updateAuthUI, updateFileName, renderSongResult, explainLyricsUI, showTimeoutFeedback, clearTimeoutFeedback, initFloatingPlayer } from './ui.js';
 
 document.addEventListener('DOMContentLoaded', async function () {
     console.log("Adagio Modules Loaded");
@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     };
     initLibrary();
+    initFloatingPlayer();
 
     themeToggle?.addEventListener('click', () => {
         setAdagioTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark', themeToggle);
@@ -126,13 +127,21 @@ document.addEventListener('DOMContentLoaded', async function () {
             clearTimeoutFeedback();
             if (result.success && result.songs) {
                 resultContainer.innerHTML = `<h3 class="recommendations-title">🔍 Recommendations</h3>`;
-                result.songs.forEach(song => {
+                result.songs.forEach((song, index) => {
                     const songCard = document.createElement('div');
                     songCard.className = 'song-card-wrapper';
                     resultContainer.appendChild(songCard);
+                    
+                    // Only auto-update the floating player for the very first (top) result
+                    const shouldAutoPlay = (index === 0);
+                    
                     fetchYouTubeVideoAPI(song.title, song.artist).then(videoData => {
-                        renderSongResult({ ...song, videoUrl: videoData.success ? videoData.videoUrl : null }, songCard);
-                    }).catch(() => renderSongResult(song, songCard));
+                        renderSongResult({ 
+                            ...song, 
+                            videoUrl: videoData.success ? videoData.videoUrl : null,
+                            autoPlayTrack: shouldAutoPlay 
+                        }, songCard);
+                    }).catch(() => renderSongResult({ ...song, autoPlayTrack: shouldAutoPlay }, songCard));
                 });
             } else {
                 resultContainer.innerHTML = `<div class="result-card"><p class="error">${sanitizeHTML(result.message || 'No results found.')}</p></div>`;
