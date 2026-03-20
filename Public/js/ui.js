@@ -74,9 +74,9 @@ export function renderSongResult(data, targetElement) {
         </div>
 
         <div class="platform-links">
-            <a href="${links.spotify}" target="_blank"><i class="fab fa-spotify"></i> Spotify</a>
-            <a href="${links.appleMusic}" target="_blank"><i class="fab fa-apple"></i> Apple Music</a>
-            <a href="${links.youtubeMusic}" target="_blank"><i class="fab fa-youtube"></i> YouTube Music</a>
+            <a href="${links.spotify}" target="_blank" class="platform-spotify"><i class="fab fa-spotify"></i> Spotify</a>
+            <a href="${links.appleMusic}" target="_blank" class="platform-apple"><i class="fab fa-apple"></i> Apple Music</a>
+            <a href="${links.youtubeMusic}" target="_blank" class="platform-youtube"><i class="fab fa-youtube"></i> YouTube Music</a>
         </div>
 
         ${data.videoUrl ? `

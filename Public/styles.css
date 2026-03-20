@@ -598,12 +598,26 @@ body[data-theme="light"].mood-change {
     background-attachment: fixed;
 }
 
+.result-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
 /* Recommendations */
 .recommendations-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
-    margin-top: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.recommendations-section h4 {
+    margin-bottom: 15px;
+    color: var(--text-primary);
+    font-size: 1.15rem;
 }
 
 .rec-card {
@@ -799,25 +813,46 @@ body[data-theme="light"].mood-change {
     flex-wrap: wrap;
     gap: 12px;
     margin-top: 20px;
+    margin-bottom: 25px;
 }
 
 .platform-links a {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 16px;
-    background: var(--btn-secondary-bg);
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--surface-border);
-    border-radius: 10px;
+    border-radius: 30px;
     color: var(--text-primary);
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 600;
     transition: var(--transition-smooth);
 }
 
-.platform-links a:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px);
+.platform-links a.platform-spotify:hover {
+    background: rgba(29, 185, 84, 0.15);
+    border-color: #1DB954;
+    color: #1DB954;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(29, 185, 84, 0.2);
+}
+
+.platform-links a.platform-apple:hover {
+    background: rgba(250, 36, 60, 0.15);
+    border-color: #FA243C;
+    color: #FA243C;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(250, 36, 60, 0.2);
+}
+
+.platform-links a.platform-youtube:hover {
+    background: rgba(255, 0, 0, 0.15);
+    border-color: #FF0000;
+    color: #FF0000;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(255, 0, 0, 0.2);
 }
 
 /* File Upload */

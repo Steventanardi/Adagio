@@ -279,7 +279,16 @@ document.addEventListener('DOMContentLoaded', async function () {
         
         if (target.matches('.mood-chip')) {
             if(searchInput && intelligentSearchButton) {
-                searchInput.value = `Find me some ${target.textContent.trim()} music`;
+                const mood = target.textContent.trim();
+                const prompts = [
+                    `Find me some ${mood} music`,
+                    `Suggest some ${mood} tracks`,
+                    `What are some good ${mood} songs?`,
+                    `I'm in the mood for ${mood} music`,
+                    `Give me unique and unexpected ${mood} songs`,
+                    `I need a highly diverse playlist for ${mood}`
+                ];
+                searchInput.value = prompts[Math.floor(Math.random() * prompts.length)];
                 intelligentSearchButton.click();
             }
         }
