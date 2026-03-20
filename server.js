@@ -4,20 +4,16 @@ const path = require('path');
 const { warmupModel } = require('./src/services/ai');
 
 // Load environment variables
-if (fs.existsSync('secret.env')) {
-    require('dotenv').config({ path: 'secret.env' });
-} else {
-    require('dotenv').config();
-}
+require('dotenv').config();
 
-console.log(`🔑 JWT Secret: ${process.env.JWT_SECRET ? 'Loaded from secret.env' : 'Using default fallback (Warning!)'}`);
+console.log(`🔑 JWT Secret: ${process.env.JWT_SECRET ? 'Loaded from .env' : 'Using default fallback (Warning!)'}`);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
-app.use(express.static('Public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Import Routes
 const authRoutes = require('./src/routes/auth');
@@ -28,6 +24,12 @@ const musicRoutes = require('./src/routes/music');
 app.use('/', authRoutes);
 app.use('/api/library', libraryRoutes);
 app.use('/', musicRoutes);
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+    console.error('Unhandled Error:', err);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+});
 
 // Start Server
 app.listen(PORT, async () => {

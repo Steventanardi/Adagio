@@ -1,8 +1,11 @@
 const fetch = require('node-fetch');
 
-const OLLAMA_MODEL   = 'qwen2.5:0.5b';
-const OLLAMA_URL     = 'http://localhost:11434/api/chat';
-const OLLAMA_TIMEOUT = 90_000;
+const OLLAMA_URL      = 'http://localhost:11434/api/chat';
+const OLLAMA_TAGS_URL = 'http://localhost:11434/api/tags';
+const OLLAMA_TIMEOUT  = 90_000;
+
+const PREFERRED_MODELS = ['qwen3.5:9b', 'qwen2.5:0.5b'];
+let currentModel = 'qwen2.5:0.5b'; // default fallback
 
 function parseAIResponse(text) {
     try {
@@ -38,7 +41,7 @@ async function callAI(systemPrompt, userPrompt, temperature = 0.7, maxTokens = 4
             headers: { 'Content-Type': 'application/json' },
             signal: controller.signal,
             body: JSON.stringify({
-                model: OLLAMA_MODEL,
+                model: currentModel,
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user',   content: userPrompt   }
@@ -70,13 +73,14 @@ async function callAI(systemPrompt, userPrompt, temperature = 0.7, maxTokens = 4
 }
 
 async function warmupModel() {
-    console.log(`🔥 Warming up Ollama model (${OLLAMA_MODEL})...`);
+    await selectBestModel();
+    console.log(`🔥 Warming up Ollama model (${currentModel})...`);
     try {
         await fetch(OLLAMA_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: OLLAMA_MODEL,
+                model: currentModel,
                 messages: [{ role: 'user', content: 'hi' }],
                 stream: false,
                 think: false,
@@ -87,6 +91,26 @@ async function warmupModel() {
         console.log(`✅ Ollama model is warm and ready!`);
     } catch (e) {
         console.warn(`⚠️ Warmup failed — is Ollama running? (${e.message})`);
+    }
+}
+
+async function selectBestModel() {
+    try {
+        const response = await fetch(OLLAMA_TAGS_URL);
+        if (!response.ok) throw new Error(`Ollama Tags API error: ${response.status}`);
+        const data = await response.json();
+        const availableModels = data.models.map(m => m.name);
+        
+        for (const preferred of PREFERRED_MODELS) {
+            if (availableModels.includes(preferred)) {
+                currentModel = preferred;
+                console.log(`🎯 Selected model: ${currentModel}`);
+                return;
+            }
+        }
+        console.warn(`⚠️ None of preferred models found. Staying with default: ${currentModel}`);
+    } catch (e) {
+        console.error(`❌ Failed to list Ollama models: ${e.message}. Using default: ${currentModel}`);
     }
 }
 

@@ -1,6 +1,6 @@
-# 🎓 AdagioThesis: Installation & Demonstration Guide
+# 🎓 Adagio: Installation & Demonstration Guide
 
-Welcome to **AdagioThesis**, an AI-powered music recognition and exploration platform. This guide provides instructions for setting up the environment and demonstrating the core features.
+Welcome to **Adagio**, an AI-powered music recognition and exploration platform. This guide provides instructions for setting up the environment and demonstrating the core features.
 
 ---
 
@@ -8,8 +8,8 @@ Welcome to **AdagioThesis**, an AI-powered music recognition and exploration pla
 
 Before you begin, ensure you have the following installed:
 1.  **Node.js** (v18 or higher)
-2.  **XAMPP** (or any MySQL server)
-3.  **Local LLM Runner** (e.g., [Ollama](https://ollama.com/) or [OpenWebUI](https://openwebui.com/))
+2.  **MySQL Server**
+3.  **Local LLM Runner**: [Ollama](https://ollama.com/)
 4.  **FFmpeg** (Included in dev dependencies, but system-wide installation is recommended for performance)
 
 ---
@@ -17,14 +17,14 @@ Before you begin, ensure you have the following installed:
 ## 🚀 Setup Instructions
 
 ### 1. Database Setup
-1.  Start your MySQL server (via XAMPP).
+1.  Start your MySQL server.
 2.  Create a database named `adagio`.
 3.  (Optional) The app will use `localStorage` for some "Pro" features like favorites, but user accounts require the MySQL backend.
 
-### 2. Local LLM Setup (Qwen3)
-1.  Install **Ollama**.
-2.  Pull the Qwen3 model: `ollama pull qwen3` (or the specific version used in your setup).
-3.  Ensure the API is accessible at `http://localhost:11434` (Ollama) or your OpenWebUI port (e.g., `12000`).
+### 2. Local LLM Setup (Ollama & Qwen)
+1.  Install **Ollama** from `ollama.com`.
+2.  Open your terminal and pull your preferred Qwen model (e.g., `ollama pull qwen3` or `ollama pull qwen2.5`).
+3.  Ensure the Ollama service is running in the background. It will automatically listen on `http://localhost:11434`.
 
 ### 3. Environment Variables
 Create a `.env` file in the root directory and add:
@@ -36,7 +36,7 @@ AUDD_API_KEY=your_audd_key
 SPOTIFY_CLIENT_ID=your_id
 SPOTIFY_CLIENT_SECRET=your_secret
 YOUTUBE_API_KEY=your_yt_key
-LOCAL_LLM_URL=http://localhost:11434/api (or 12000/api)
+LOCAL_LLM_URL=http://localhost:11434/api
 ```
 
 ### 4. Installation
@@ -69,7 +69,3 @@ npm start
 - **Action**: Upload an audio file or use the Microphone.
 - **Result**: A glowing, neon audio visualizer reacts in real-time to the frequency spectrum.
 
----
-
-## 📂 Project Structure Note
-The project has been rebranded as **Adagio Thesis**. For the best experience, rename the root folder from `AntiGravityAdagio` to `Adagio Thesis` on your local machine. The core backend file remains named `server.js`.

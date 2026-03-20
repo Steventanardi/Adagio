@@ -25,12 +25,59 @@ const storage = multer.diskStorage({
         cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+        // Use a unique suffix to prevent filename guessing or collisions
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname).toLowerCase());
     }
 });
-const upload = multer({ storage: storage });
+
+// Add strict validation and size limits
+const fileFilter = (req, file, cb) => {
+    // Only accept audio and video MIME types
+    if (file.mimetype.startsWith('audio/') || file.mimetype.startsWith('video/')) {
+        cb(null, true);
+    } else {
+        cb(new Error('Invalid file type! Only audio or video files are allowed.'), false);
+    }
+};
+
+const upload = multer({ 
+    storage: storage,
+    limits: { 
+        fileSize: 30 * 1024 * 1024 // 30 MB max file size limit
+    },
+    fileFilter: fileFilter
+});
+
+// Auto-cleanup helper: keeps only the newest 30 files
+const cleanupOldUploads = () => {
+    const uploadDir = path.join(__dirname, '../../uploads/');
+    if (!fs.existsSync(uploadDir)) return;
+    
+    const MAX_FILES = 30; // Maximum allowed files in folder
+    try {
+        const files = fs.readdirSync(uploadDir)
+            .map(name => ({ name, path: path.join(uploadDir, name) }))
+            .map(file => {
+                try { file.stat = fs.statSync(file.path); return file; } catch(e) { return null; }
+            })
+            .filter(f => f && f.stat.isFile())
+            .sort((a, b) => b.stat.mtime.getTime() - a.stat.mtime.getTime());
+
+        if (files.length > MAX_FILES) {
+            const toDelete = files.slice(MAX_FILES);
+            toDelete.forEach(file => {
+                try { fs.unlinkSync(file.path); } catch (e) {}
+            });
+            console.log(`🧹 Auto-Cleanup: Removed ${toDelete.length} old background upload files to save space.`);
+        }
+    } catch (err) {
+        console.error('Error during upload auto-cleanup:', err);
+    }
+};
 
 const handleAudioRecognition = async (req, res) => {
+    cleanupOldUploads(); // Run cleanup in the background whenever a new audio file is uploaded
     if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded.' });
 
     const filePath = req.file.path;
@@ -79,9 +126,24 @@ const handleAudioRecognition = async (req, res) => {
         .run();
 };
 
-router.post('/upload', upload.single('musicFile'), handleAudioRecognition);
-router.post('/upload-mic-audio', upload.single('musicFile'), handleAudioRecognition);
-router.post('/recognize-indevice-audio', upload.single('musicFile'), handleAudioRecognition);
+// Wrapper to catch Multer errors gracefully
+const uploadMiddleware = (req, res, next) => {
+    const uploader = upload.single('musicFile');
+    uploader(req, res, function (err) {
+        if (err instanceof multer.MulterError) {
+            // A Multer-specific error (e.g., file too large)
+            return res.status(400).json({ success: false, message: 'File upload error: ' + err.message });
+        } else if (err) {
+            // Custom error from fileFilter (e.g., invalid file type)
+            return res.status(400).json({ success: false, message: err.message });
+        }
+        next();
+    });
+};
+
+router.post('/upload', uploadMiddleware, handleAudioRecognition);
+router.post('/upload-mic-audio', uploadMiddleware, handleAudioRecognition);
+router.post('/recognize-indevice-audio', uploadMiddleware, handleAudioRecognition);
 
 // Debug endpoint to hear what the server heard
 router.get('/api/debug/last-audio', (req, res) => {

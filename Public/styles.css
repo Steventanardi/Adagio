@@ -781,6 +781,11 @@ body[data-theme="light"].mood-change {
     border-radius: 12px;
     overflow: hidden;
     margin-bottom: 24px;
+    min-height: 300px;
+}
+
+.spacer {
+    flex-grow: 1;
 }
 
 .video-container iframe {
