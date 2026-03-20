@@ -42,11 +42,37 @@
     --btn-secondary-bg: rgba(0, 0, 0, 0.05);
 }
 
-[data-theme="light"] body::before {
+body.premium-bg::before {
+    content: '';
+    position: fixed;
+    top: -10%;
+    left: -10%;
+    width: 70%;
+    height: 70%;
+    background: radial-gradient(circle, rgba(0, 242, 255, 0.15), transparent);
+    filter: blur(120px);
+    z-index: -1;
+    animation: move 20s infinite alternate;
+}
+
+body.premium-bg::after {
+    content: '';
+    position: fixed;
+    bottom: -10%;
+    right: -10%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(circle, rgba(112, 0, 255, 0.15), transparent);
+    filter: blur(120px);
+    z-index: -1;
+    animation: move 25s infinite alternate-reverse;
+}
+
+[data-theme="light"] body.premium-bg::before {
     background: radial-gradient(circle, rgba(0, 113, 227, 0.1), transparent);
 }
 
-[data-theme="light"] body::after {
+[data-theme="light"] body.premium-bg::after {
     background: radial-gradient(circle, rgba(191, 72, 175, 0.1), transparent);
 }
 
@@ -374,6 +400,89 @@ h4 {
     box-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
 }
 
+/* --- Premium Identification Suite (Consolidated) --- */
+.mic-aura, .capture-aura {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: 1px solid var(--accent-primary);
+    opacity: 0;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.mic-aura-1, .capture-aura-1 { animation: pulseAura 4s infinite 0s; }
+.mic-aura-2, .capture-aura-2 { animation: pulseAura 4s infinite 1.3s; }
+.mic-aura-3, .capture-aura-3 { animation: pulseAura 4s infinite 2.6s; }
+
+.capture-aura {
+    border-color: var(--accent-secondary);
+}
+
+@keyframes pulseAura {
+    0% {
+        width: 140px;
+        height: 140px;
+        opacity: 0.6;
+    }
+    100% {
+        width: 380px;
+        height: 380px;
+        opacity: 0;
+    }
+}
+
+.mic-ui-core.listening .premium-mic-btn,
+.mic-ui-core.capturing .premium-capture-btn {
+    background: #ff3b30 !important;
+    box-shadow: 0 0 50px rgba(255, 59, 48, 0.6) !important;
+    animation: listeningPulse 1.2s infinite alternate ease-in-out;
+}
+
+.premium-capture-btn {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
+    border: none;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 10;
+    box-shadow: 0 10px 30px rgba(112, 0, 255, 0.4);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.premium-capture-btn i { font-size: 2.2rem; }
+.premium-capture-btn span { font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; }
+
+.premium-capture-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 15px 40px rgba(112, 0, 255, 0.6);
+}
+
+@keyframes listeningPulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.08); }
+}
+
+.mic-ui-core.listening .mic-aura,
+.mic-ui-core.capturing .capture-aura {
+    border-color: #ff3b30;
+    animation-duration: 2s;
+}
+
 /* Main Content */
 .main-content-wrapper {
     margin-left: 120px;
@@ -418,82 +527,7 @@ h4 {
     text-align: center;
 }
 
-/* Premium Start Listening Button */
-#startListeningMic {
-    width: 180px;
-    height: 180px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-    color: #fff !important;
-    border: none;
-    font-size: 1.2rem;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    box-shadow: 0 0 0 10px rgba(0, 242, 255, 0.1), 0 0 40px rgba(0, 242, 255, 0.3);
-    /* Multi-layered shadow */
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    animation: pulse-glow 3s infinite;
-    position: relative;
-    z-index: 10;
-}
-
-#startListeningMic::after {
-    content: '';
-    position: absolute;
-    top: -20px;
-    left: -20px;
-    right: -20px;
-    bottom: -20px;
-    border-radius: 50%;
-    border: 1px solid var(--accent-primary);
-    opacity: 0.3;
-    animation: ripple 2s infinite;
-}
-
-@keyframes ripple {
-    0% {
-        transform: scale(0.8);
-        opacity: 0.5;
-    }
-
-    100% {
-        transform: scale(1.5);
-        opacity: 0;
-    }
-}
-
-#startListeningMic i {
-    font-size: 3rem;
-    /* Larger icon */
-    margin-right: 0 !important;
-    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.2));
-}
-
-#startListeningMic:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 0 15px rgba(0, 242, 255, 0.2), 0 0 60px rgba(0, 242, 255, 0.6);
-}
-
-@keyframes pulse-glow {
-    0% {
-        box-shadow: 0 0 0 0 rgba(0, 242, 255, 0.4);
-    }
-
-    70% {
-        box-shadow: 0 0 0 30px rgba(0, 242, 255, 0);
-    }
-
-    100% {
-        box-shadow: 0 0 0 0 rgba(0, 242, 255, 0);
-    }
-}
-
-/* --- New Circular Microphone UI --- */
+/* Premium Microphone UI - Replaces Legacy Styles */
 .mic-ui-core {
     position: relative;
     width: 420px;
@@ -866,6 +900,21 @@ body[data-theme="light"].mood-change {
     font-size: 1.15rem;
 }
 
+.upload-area {
+    margin: 40px auto;
+    padding: 60px 40px;
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+[data-theme="light"] .upload-area {
+    background: rgba(0, 0, 0, 0.02);
+    border: 2px dashed rgba(0, 0, 0, 0.1);
+}
 .rec-card {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--surface-border);

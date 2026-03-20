@@ -62,6 +62,15 @@ document.addEventListener('DOMContentLoaded', async function () {
         setAdagioTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark', themeToggle);
     });
 
+    // Dynamically stop/start background blobs based on scroll position (not on AI section)
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 300) {
+            document.body.classList.remove('premium-bg');
+        } else if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/' || window.location.pathname === '') {
+            document.body.classList.add('premium-bg');
+        }
+    });
+
     document.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
         switch (e.key.toLowerCase()) {
@@ -187,8 +196,11 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (currentAnim && currentAnim.animationId) cancelAnimationFrame(currentAnim.animationId);
         if (currentAnim && currentAnim.audioContext) currentAnim.audioContext.close();
         isListening = false;
+        
+        const core = document.querySelector('.mic-ui-core');
         startListeningMicButton?.classList.remove('listening', 'pulsing');
-        document.querySelector('.mic-ui-core')?.classList.remove('active');
+        core?.classList.remove('active', 'listening');
+        
         const btnText = startListeningMicButton?.querySelector('span');
         if (btnText) btnText.textContent = 'Start Listening';
         if (micStatus) micStatus.textContent = 'Tap to start over';
@@ -216,14 +228,25 @@ document.addEventListener('DOMContentLoaded', async function () {
                         const id = setTimeout(() => controller.abort(), 45000);
                         const result = await uploadMicAudioAPI(formData, controller);
                         clearTimeout(id); clearTimeoutFeedback();
-                        if (result.success) renderSongResult(result.metadata || result, liveResultMic);
-                        else liveResultMic.innerHTML = `<div class="result-card"><p class="error">${sanitizeHTML(result.message)}</p></div>`;
+                        if (result.success) {
+                            const song = result.metadata || result;
+                            fetchYouTubeVideoAPI(song.title, song.artist).then(videoData => {
+                                renderSongResult({
+                                    ...song,
+                                    videoUrl: videoData.success ? videoData.videoUrl : null,
+                                    autoPlayTrack: true
+                                }, liveResultMic);
+                            }).catch(() => renderSongResult({ ...song, autoPlayTrack: true }, liveResultMic));
+                        } else {
+                            liveResultMic.innerHTML = `<div class="result-card"><p class="error">${sanitizeHTML(result.message)}</p></div>`;
+                        }
                     } catch (e) { clearTimeoutFeedback(); liveResultMic.innerHTML = `<div class="result-card"><p class="error">Upload failed.</p></div>`; }
                     stopMicUI();
                 };
                 mediaRecorder.start(1000);
                 startListeningMicButton.classList.add('listening', 'pulsing');
-                document.querySelector('.mic-ui-core')?.classList.add('active');
+                const core = document.querySelector('.mic-ui-core');
+                core?.classList.add('active', 'listening');
                 if (micStatus) micStatus.textContent = 'Adagio is listening...';
                 isListening = true;
                 setTimeout(() => stopMicUI(), 15000);
@@ -233,9 +256,18 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     const resetInDeviceUI = () => {
         if(recognitionStatus) recognitionStatus.textContent = 'Ready to capture';
-        recognitionCard?.classList.remove('active');
-        if(startRecognitionButton) startRecognitionButton.disabled = false;
-        if(stopRecognitionButton) stopRecognitionButton.disabled = true;
+        
+        const core = document.querySelector('.mic-ui-core');
+        core?.classList.remove('active', 'capturing');
+        
+        if(startRecognitionButton) {
+            startRecognitionButton.disabled = false;
+            startRecognitionButton.style.display = 'flex';
+        }
+        if(stopRecognitionButton) {
+            stopRecognitionButton.disabled = true;
+            stopRecognitionButton.style.display = 'none';
+        }
         if (displayStream) displayStream.getTracks().forEach(track => track.stop());
     };
 
@@ -255,15 +287,30 @@ document.addEventListener('DOMContentLoaded', async function () {
                     const controller = new AbortController(); const id = setTimeout(() => controller.abort(), 45000);
                     const result = await uploadInDeviceAudioAPI(formData, controller);
                     clearTimeout(id); clearTimeoutFeedback();
-                    if (result.success) renderSongResult(result.metadata || result, recognitionResult);
-                    else recognitionResult.innerHTML = `<div class="result-card"><p class="error">Failed.</p></div>`;
+                    if (result.success) {
+                        const song = result.metadata || result;
+                        fetchYouTubeVideoAPI(song.title, song.artist).then(videoData => {
+                            renderSongResult({
+                                ...song,
+                                videoUrl: videoData.success ? videoData.videoUrl : null,
+                                autoPlayTrack: true
+                            }, recognitionResult);
+                        }).catch(() => renderSongResult({ ...song, autoPlayTrack: true }, recognitionResult));
+                    } else recognitionResult.innerHTML = `<div class="result-card"><p class="error">Failed.</p></div>`;
                 } catch(e) { clearTimeoutFeedback(); recognitionResult.innerHTML = `<div class="result-card"><p class="error">Error.</p></div>`; }
                 resetInDeviceUI();
             };
             mediaRecorder.start();
             if(recognitionStatus) recognitionStatus.textContent = 'Capturing... Play some music now!';
-            recognitionCard?.classList.add('active');
-            startRecognitionButton.disabled = true; stopRecognitionButton.disabled = false;
+            
+            const core = document.querySelector('.mic-ui-core');
+            core?.classList.add('active', 'capturing');
+            
+            if(startRecognitionButton) startRecognitionButton.style.display = 'none';
+            if(stopRecognitionButton) {
+                stopRecognitionButton.disabled = false;
+                stopRecognitionButton.style.display = 'flex';
+            }
             setTimeout(() => { if (mediaRecorder.state === "recording") mediaRecorder.stop(); }, 10000);
         } catch (err) { alert('Screen capture permission is required.'); }
     });
@@ -278,8 +325,16 @@ document.addEventListener('DOMContentLoaded', async function () {
             const controller = new AbortController(); const id = setTimeout(() => controller.abort(), 60000);
             const result = await uploadFileAPI(formData, controller);
             clearTimeout(id); clearTimeoutFeedback();
-            if (result.success) renderSongResult(result.metadata || result, uploadResult);
-            else uploadResult.innerHTML = `<div class="result-card"><p class="error">${sanitizeHTML(result.message)}</p></div>`;
+            if (result.success) {
+                const song = result.metadata || result;
+                fetchYouTubeVideoAPI(song.title, song.artist).then(videoData => {
+                    renderSongResult({
+                        ...song,
+                        videoUrl: videoData.success ? videoData.videoUrl : null,
+                        autoPlayTrack: true
+                    }, uploadResult);
+                }).catch(() => renderSongResult({ ...song, autoPlayTrack: true }, uploadResult));
+            } else uploadResult.innerHTML = `<div class="result-card"><p class="error">${sanitizeHTML(result.message)}</p></div>`;
         } catch(e) { clearTimeoutFeedback(); uploadResult.innerHTML = `<div class="result-card"><p class="error">Upload timed out or failed.</p></div>`; }
     });
 

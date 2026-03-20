@@ -181,6 +181,18 @@ export function renderSongResult(data, targetElement) {
         // or if it was the ONLY result.
         if (data.autoPlayTrack) {
             updateFloatingPlayer(title, artist);
+            
+            // Wait for one more tick and find the iframe to ensure playing state
+            setTimeout(() => {
+                const iframe = targetElement.querySelector('iframe');
+                if (iframe) {
+                   const src = iframe.src;
+                   // Add autoplay=1 if not present
+                   if (!src.includes('autoplay=1')) {
+                       iframe.src = src + (src.includes('?') ? '&' : '?') + 'autoplay=1';
+                   }
+                }
+            }, 100);
         }
 
         // If search results didn't already have a video, fetch one now
