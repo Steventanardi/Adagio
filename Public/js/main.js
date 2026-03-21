@@ -195,6 +195,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
         if (currentAnim && currentAnim.animationId) cancelAnimationFrame(currentAnim.animationId);
         if (currentAnim && currentAnim.audioContext) currentAnim.audioContext.close();
+        if (currentAnim && currentAnim.cleanup) currentAnim.cleanup();
         isListening = false;
         
         const core = document.querySelector('.mic-ui-core');

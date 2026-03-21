@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const fsp = require('fs').promises;
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('ffmpeg-static');
 
@@ -19,10 +20,9 @@ const router = express.Router();
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const uploadDir = path.join(__dirname, '../../uploads/');
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
+        fs.mkdir(uploadDir, { recursive: true }, () => {
+            cb(null, uploadDir);
+        });
     },
     filename: (req, file, cb) => {
         // Use a unique suffix to prevent filename guessing or collisions
@@ -50,25 +50,29 @@ const upload = multer({
 });
 
 // Auto-cleanup helper: keeps only the newest 30 files
-const cleanupOldUploads = () => {
+const cleanupOldUploads = async () => {
     const uploadDir = path.join(__dirname, '../../uploads/');
-    if (!fs.existsSync(uploadDir)) return;
+    try {
+        await fsp.access(uploadDir);
+    } catch { return; }
     
     const MAX_FILES = 30; // Maximum allowed files in folder
     try {
-        const files = fs.readdirSync(uploadDir)
-            .map(name => ({ name, path: path.join(uploadDir, name) }))
-            .map(file => {
-                try { file.stat = fs.statSync(file.path); return file; } catch(e) { return null; }
-            })
-            .filter(f => f && f.stat.isFile())
+        const fileNames = await fsp.readdir(uploadDir);
+        const files = await Promise.all(fileNames.map(async name => {
+            const filePath = path.join(uploadDir, name);
+            try { return { name, path: filePath, stat: await fsp.stat(filePath) }; } 
+            catch(e) { return null; }
+        }));
+        
+        const validFiles = files.filter(f => f && f.stat.isFile())
             .sort((a, b) => b.stat.mtime.getTime() - a.stat.mtime.getTime());
 
-        if (files.length > MAX_FILES) {
-            const toDelete = files.slice(MAX_FILES);
-            toDelete.forEach(file => {
-                try { fs.unlinkSync(file.path); } catch (e) {}
-            });
+        if (validFiles.length > MAX_FILES) {
+            const toDelete = validFiles.slice(MAX_FILES);
+            await Promise.all(toDelete.map(async file => {
+                try { await fsp.unlink(file.path); } catch (e) {}
+            }));
             console.log(`🧹 Auto-Cleanup: Removed ${toDelete.length} old background upload files to save space.`);
         }
     } catch (err) {
@@ -111,17 +115,19 @@ const handleAudioRecognition = async (req, res) => {
                     console.error("❌ Recognition error:", err);
                     res.status(500).json({ success: false, message: "Internal recognition error" });
                 } finally {
-                    if (fs.existsSync(filePath)) try { fs.unlinkSync(filePath); } catch (e) { }
+                    try { await fsp.unlink(filePath).catch(() => {}); } catch (e) { }
                     // Store last audio for debug before deleting
-                    fs.copyFileSync(trimmedPath, path.join(__dirname, '../../uploads', 'last-debug.mp3'));
-                    if (fs.existsSync(trimmedPath)) try { fs.unlinkSync(trimmedPath); } catch (e) { }
+                    try { 
+                        await fsp.copyFile(trimmedPath, path.join(__dirname, '../../uploads', 'last-debug.mp3'));
+                    } catch (e) {}
+                    try { await fsp.unlink(trimmedPath).catch(() => {}); } catch (e) { }
                 }
             });
         })
-        .on('error', (err) => {
+        .on('error', async (err) => {
             console.error('❌ FFmpeg Processing Error:', err.message);
             res.status(500).json({ success: false, message: "Audio processing failed" });
-            if (fs.existsSync(filePath)) try { fs.unlinkSync(filePath); } catch (e) { }
+            try { await fsp.unlink(filePath).catch(() => {}); } catch (e) { }
         })
         .run();
 };

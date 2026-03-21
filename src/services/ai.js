@@ -8,25 +8,21 @@ const PREFERRED_MODELS = ['qwen3.5:9b', 'qwen2.5:0.5b'];
 let currentModel = 'qwen2.5:0.5b'; // default fallback
 
 function parseAIResponse(text) {
+    if (!text) return null;
     try {
-        const jsonStartIndex = text.indexOf('{');
-        const arrayStartIndex = text.indexOf('[');
-        let startIndex = -1;
-        if (jsonStartIndex !== -1 && (arrayStartIndex === -1 || jsonStartIndex < arrayStartIndex)) {
-            startIndex = jsonStartIndex;
-        } else {
-            startIndex = arrayStartIndex;
+        return JSON.parse(text);
+    } catch {
+        try {
+            const match = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (match) return JSON.parse(match[1]);
+        } catch {}
+
+        try {
+            const braceMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+            if (braceMatch) return JSON.parse(braceMatch[0]);
+        } catch (e) {
+            console.error('Failed to parse AI response structure:', e.message);
         }
-        if (startIndex !== -1) {
-            const lastChar = text.charAt(startIndex) === '{' ? '}' : ']';
-            const endIndex = text.lastIndexOf(lastChar);
-            if (endIndex !== -1) {
-                const jsonStr = text.substring(startIndex, endIndex + 1);
-                return JSON.parse(jsonStr);
-            }
-        }
-    } catch (e) {
-        console.error('Failed to parse AI response:', e);
     }
     return null;
 }

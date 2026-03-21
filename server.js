@@ -4,9 +4,18 @@ const path = require('path');
 const { warmupModel } = require('./src/services/ai');
 
 // Load environment variables
-require('dotenv').config();
+if (fs.existsSync(path.join(__dirname, 'secret.env'))) {
+    require('dotenv').config({ path: path.join(__dirname, 'secret.env') });
+} else {
+    require('dotenv').config();
+}
 
-console.log(`🔑 JWT Secret: ${process.env.JWT_SECRET ? 'Loaded from .env' : 'Using default fallback (Warning!)'}`);
+if (!process.env.JWT_SECRET) {
+    console.error('🚨 FATAL ERROR: JWT_SECRET environment variable is missing.');
+    console.error('Please define JWT_SECRET in your secret.env file before starting the server.');
+    process.exit(1);
+}
+console.log('🔑 JWT Secret: Loaded securely from environment.');
 
 const app = express();
 const PORT = process.env.PORT || 3000;

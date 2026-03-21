@@ -20,12 +20,26 @@ export function startVisualizer(stream) {
     const centerY = size / 2;
     const innerRadius = 95;
 
+    let isSilentFrames = 0;
     let animationId;
     function draw() {
         animationId = requestAnimationFrame(draw);
         analyser.getByteFrequencyData(dataArray);
 
-        ctx.clearRect(0, 0, size, size);
+        // Optimization: skip drawing if completely silent for a while
+        let isSilent = true;
+        for (let i = 0; i < bufferLength; i++) {
+            if (dataArray[i] > 2) { isSilent = false; break; }
+        }
+        
+        if (isSilent) {
+            isSilentFrames++;
+            if (isSilentFrames > 30) return; // Wait 30 frames before sleeping explicitly
+        } else {
+            isSilentFrames = 0;
+        }
+
+        ctx.clearRect(0, 0, canvas.width / window.devicePixelRatio, canvas.height / window.devicePixelRatio);
 
         for (let i = 0; i < bufferLength; i++) {
             const value = dataArray[i];
@@ -61,5 +75,20 @@ export function startVisualizer(stream) {
         }
     }
     draw();
-    return { animationId, audioContext };
+
+    const resizeHandler = () => {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.setTransform(1, 0, 0, 1, 0, 0); // reset scale
+        ctx.scale(dpr, dpr);
+    };
+    window.addEventListener('resize', resizeHandler);
+
+    return { 
+        animationId, 
+        audioContext,
+        cleanup: () => window.removeEventListener('resize', resizeHandler)
+    };
 }
