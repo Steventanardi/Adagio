@@ -137,7 +137,7 @@ export function renderSongResult(data, targetElement) {
 
         ${data.videoUrl ? `
             <div class="video-container">
-                <iframe src="${convertToEmbedUrl(data.videoUrl)}?enablejsapi=1" allowfullscreen></iframe>
+                <iframe src="${convertToEmbedUrl(data.videoUrl)}?enablejsapi=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
             </div>` : ''
         }
 
@@ -202,7 +202,7 @@ export function renderSongResult(data, targetElement) {
                     const platformLinks = card.querySelector('.platform-links');
                     const videoContainer = document.createElement('div');
                     videoContainer.className = 'video-container';
-                    videoContainer.innerHTML = `<iframe src="${convertToEmbedUrl(res.videoUrl)}?enablejsapi=1" allowfullscreen></iframe>`;
+                    videoContainer.innerHTML = `<iframe src="${convertToEmbedUrl(res.videoUrl)}?enablejsapi=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
                     platformLinks.after(videoContainer);
                 }
             }).catch(e => console.error("Auto YouTube fetch failed", e));

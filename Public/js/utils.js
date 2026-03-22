@@ -20,9 +20,11 @@ export function safeBtoa(str) {
 
 export function convertToEmbedUrl(youtubeUrl) {
     if (!youtubeUrl) return null;
-    if (youtubeUrl.includes("youtube.com/embed/")) return youtubeUrl;
+    if (youtubeUrl.includes("youtube.com/embed/")) {
+        return youtubeUrl.split('?')[0];
+    }
     const idMatch = youtubeUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/);
-    if (idMatch && idMatch[1]) return `https://www.youtube.com/embed/${idMatch[1]}?autoplay=0`;
+    if (idMatch && idMatch[1]) return `https://www.youtube.com/embed/${idMatch[1]}`;
     return youtubeUrl.replace("watch?v=", "embed/");
 }
 
