@@ -4,7 +4,7 @@ const OLLAMA_URL      = 'http://localhost:11434/api/chat';
 const OLLAMA_TAGS_URL = 'http://localhost:11434/api/tags';
 const OLLAMA_TIMEOUT  = 90_000;
 
-const PREFERRED_MODELS = ['qwen3.5:9b', 'qwen2.5:0.5b'];
+const PREFERRED_MODELS = ['gpt-oss:20b', 'qwen3.5:9b', 'qwen2.5:0.5b'];
 let currentModel = 'qwen2.5:0.5b'; // default fallback
 
 function parseAIResponse(text) {
