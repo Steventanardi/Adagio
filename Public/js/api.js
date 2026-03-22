@@ -11,14 +11,43 @@ export async function fetchLibraryAPI() {
     }
 }
 
-export async function searchIntelligentAPI(apiQuery) {
-    const response = await fetch('/intelligent-search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: apiQuery }),
-    });
-    if (!response.ok) throw new Error(`Server error: ${response.status}`);
-    return await response.json();
+export async function searchIntelligentStreamAPI(apiQuery, onChunk, onStatus, onDone, onError) {
+    try {
+        const response = await fetch('/intelligent-search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: apiQuery }),
+        });
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+        
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            
+            const lines = buffer.split('\n\n');
+            buffer = lines.pop(); 
+            
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const dataStr = line.replace('data: ', '');
+                    try {
+                        const data = JSON.parse(dataStr);
+                        if (data.type === 'chunk') onChunk(data.text);
+                        else if (data.type === 'status') onStatus(data.message);
+                        else if (data.type === 'done') onDone(data.songs);
+                        else if (data.type === 'error') if (onError) onError(new Error(data.error));
+                    } catch (e) { console.error('Error parsing SSE data:', e, dataStr); }
+                }
+            }
+        }
+    } catch (e) {
+        if (onError) onError(e);
+    }
 }
 
 export async function fetchYouTubeVideoAPI(title, artist) {
@@ -58,13 +87,42 @@ export async function uploadFileAPI(formData, controller) {
     return await response.json();
 }
 
-export async function deepLyricsAPI(text, artist, title) {
-    const response = await fetch('/api/deep-lyrics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, artist, title })
-    });
-    return await response.json();
+export async function deepLyricsStreamAPI(text, artist, title, onChunk, onDone, onError) {
+    try {
+        const response = await fetch('/api/deep-lyrics', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text, artist, title })
+        });
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+        
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            
+            const lines = buffer.split('\n\n');
+            buffer = lines.pop(); 
+            
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const dataStr = line.replace('data: ', '');
+                    try {
+                        const data = JSON.parse(dataStr);
+                        if (data.type === 'chunk') onChunk(data.text);
+                        else if (data.type === 'done') onDone();
+                        else if (data.type === 'error') if (onError) onError(new Error(data.error));
+                    } catch (e) { console.error('Error parsing SSE data:', e, dataStr); }
+                }
+            }
+        }
+    } catch (e) {
+        if (onError) onError(e);
+    }
 }
 
 export async function fetchMoodAPI(artist, title, lyrics) {
@@ -76,13 +134,43 @@ export async function fetchMoodAPI(artist, title, lyrics) {
     return await res.json();
 }
 
-export async function fetchRecommendationsAPI(artist, title) {
-    const res = await fetch('/api/recommendations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ artist, title })
-    });
-    return await res.json();
+export async function fetchRecommendationsStreamAPI(artist, title, onChunk, onStatus, onDone, onError) {
+    try {
+        const response = await fetch('/api/recommendations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ artist, title })
+        });
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+        
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            
+            const lines = buffer.split('\n\n');
+            buffer = lines.pop(); 
+            
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const dataStr = line.replace('data: ', '');
+                    try {
+                        const data = JSON.parse(dataStr);
+                        if (data.type === 'chunk') onChunk(data.text);
+                        else if (data.type === 'status') onStatus(data.message);
+                        else if (data.type === 'done') onDone(data.recommendations);
+                        else if (data.type === 'error') if (onError) onError(new Error(data.error));
+                    } catch (e) { console.error('Error parsing SSE data:', e, dataStr); }
+                }
+            }
+        }
+    } catch (e) {
+        if (onError) onError(e);
+    }
 }
 
 export async function toggleFavoriteAPI(id, songData, isAdding, token) {

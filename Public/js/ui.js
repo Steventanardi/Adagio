@@ -1,5 +1,5 @@
 import { sanitizeHTML, convertToEmbedUrl } from './utils.js';
-import { fetchMoodAPI, fetchRecommendationsAPI, toggleFavoriteAPI, translateLyricsAPI, deepLyricsAPI, fetchYouTubeVideoAPI, fetchLyricsAPI } from './api.js';
+import { fetchMoodAPI, fetchRecommendationsStreamAPI, toggleFavoriteAPI, translateLyricsAPI, deepLyricsStreamAPI, fetchYouTubeVideoAPI, fetchLyricsAPI } from './api.js';
 
 let floatingPlayer = null;
 export function initFloatingPlayer() {
@@ -275,7 +275,7 @@ export async function explainLyricsUI(element, songId) {
     const rect = element.getBoundingClientRect();
     popup.style.top = `${rect.bottom + window.scrollY + 10}px`;
     popup.style.left = `${Math.min(rect.left, window.innerWidth - 300)}px`;
-    popup.innerHTML = `<div class="loading-dots"><span>.</span><span>.</span><span>.</span></div> Analyzing meaning...`;
+    popup.innerHTML = `<p class="explanation" style="margin:0;">💡 <strong>Adagio Analysis:</strong><br><span id="lyricStreamText"></span> <i class="fas fa-pen fa-pulse" style="font-size:0.8rem;opacity:0.6;"></i></p>`;
     popup.classList.add('visible');
 
     const closePopup = (e) => {
@@ -286,42 +286,65 @@ export async function explainLyricsUI(element, songId) {
     };
     setTimeout(() => document.addEventListener('click', closePopup), 100);
 
-    try {
-        const result = await deepLyricsAPI(text, artist, title);
-        if (result.success) {
-            popup.innerHTML = `<p class="explanation">💡 <strong>Adagio Analysis:</strong><br>${sanitizeHTML(result.explanation)}</p>`;
-        } else {
-            popup.innerHTML = `<p class="error">Couldn't analyze this line.</p>`;
-        }
-    } catch (e) {
-        popup.innerHTML = `<p class="error">Error connecting to AI.</p>`;
-    }
+    const streamSpan = document.getElementById('lyricStreamText');
+
+    await deepLyricsStreamAPI(
+        text, artist, title,
+        (chunk) => { streamSpan.innerHTML += sanitizeHTML(chunk); },
+        () => { 
+            const spinner = popup.querySelector('.fa-pen');
+            if(spinner) spinner.remove();
+        },
+        (err) => { popup.innerHTML = `<p class="error">Error connecting to AI.</p>`; }
+    );
 }
 
 export async function renderRecommendations(artist, title, container) {
-    try {
-        const data = await fetchRecommendationsAPI(artist, title);
-        if (data.success && data.recommendations.length > 0) {
-            const recSection = document.createElement('div');
-            recSection.className = 'recommendations-section';
-            recSection.innerHTML = `<h4><i class="fas fa-wand-magic-sparkles"></i> You might also like...</h4>
-            <div class="recommendations-grid"></div>`;
+    const resultCard = container.querySelector('.result-card');
+    if (!resultCard) return;
 
-            const grid = recSection.querySelector('.recommendations-grid');
-            data.recommendations.forEach(rec => {
-                const card = document.createElement('div');
-                card.className = 'rec-card btn-searchable';
-                card.dataset.query = `${rec.title} by ${rec.artist}`;
-                card.innerHTML = `
-                <h4>${sanitizeHTML(rec.title)}</h4>
-                <p>${sanitizeHTML(rec.artist)}</p>
-            `;
-                grid.appendChild(card);
-            });
-            const resultCard = container.querySelector('.result-card');
-            if (resultCard) resultCard.appendChild(recSection);
-        }
-    } catch (e) { console.error("Recommendations failed", e); }
+    const recSection = document.createElement('div');
+    recSection.className = 'recommendations-section';
+    recSection.innerHTML = `<h4><i class="fas fa-wand-magic-sparkles"></i> You might also like...</h4>
+        <div class="stream-text" style="font-size: 0.9rem; color: var(--text-secondary);"></div>
+        <div class="recommendations-grid" style="display:none;"></div>`;
+    resultCard.appendChild(recSection);
+
+    const streamText = recSection.querySelector('.stream-text');
+    const grid = recSection.querySelector('.recommendations-grid');
+
+    let accText = '';
+    await fetchRecommendationsStreamAPI(
+        artist, title,
+        (chunk) => { 
+            accText += chunk;
+            let display = accText;
+            const codeBlockIdx = display.indexOf('```');
+            if (codeBlockIdx !== -1) display = display.substring(0, codeBlockIdx);
+            else if (display.trim().startsWith('[')) display = "Curating complementary tracks...";
+            streamText.innerHTML = sanitizeHTML(display).replace(/\n/g, '<br>'); 
+        },
+        (status) => { streamText.innerHTML += `<br><em style="color:var(--accent-secondary);"><i class="fas fa-spinner fa-spin"></i> Loading tracks...</em>`; },
+        (recommendations) => {
+            streamText.style.display = 'none';
+            if (recommendations && recommendations.length > 0) {
+                grid.style.display = 'grid';
+                recommendations.forEach(rec => {
+                    const card = document.createElement('div');
+                    card.className = 'rec-card btn-searchable';
+                    card.dataset.query = `${rec.title} by ${rec.artist}`;
+                    card.innerHTML = `
+                    <h4>${sanitizeHTML(rec.title)}</h4>
+                    <p>${sanitizeHTML(rec.artist)}</p>
+                `;
+                    grid.appendChild(card);
+                });
+            } else {
+                recSection.remove();
+            }
+        },
+        (err) => { recSection.remove(); }
+    );
 }
 
 let timeoutInterval;

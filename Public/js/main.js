@@ -1,5 +1,5 @@
 import { getSavedTheme, setAdagioTheme, saveToHistory, getHistory, sanitizeHTML } from './utils.js';
-import { fetchLibraryAPI, searchIntelligentAPI, fetchYouTubeVideoAPI, uploadMicAudioAPI, uploadInDeviceAudioAPI, uploadFileAPI, toggleFavoriteAPI, translateLyricsAPI, fetchRecommendationsAPI } from './api.js';
+import { fetchLibraryAPI, searchIntelligentStreamAPI, fetchYouTubeVideoAPI, uploadMicAudioAPI, uploadInDeviceAudioAPI, uploadFileAPI, toggleFavoriteAPI, translateLyricsAPI, fetchRecommendationsStreamAPI } from './api.js';
 import { startVisualizer } from './audio.js';
 import { updateAuthUI, updateFileName, renderSongResult, explainLyricsUI, showTimeoutFeedback, clearTimeoutFeedback, initFloatingPlayer } from './ui.js';
 
@@ -129,40 +129,61 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         let apiQuery = isHumMode && !queryOverride ? `[HUMMING/SINGING MODE] The user is humming or describing phonetically: ${originalQuery}. Find the closest matching songs.` : originalQuery;
 
-        showTimeoutFeedback(resultContainer, 'Adagio is thinking...');
-        
-        try {
-            const result = await searchIntelligentAPI(apiQuery);
-            clearTimeoutFeedback();
-            if (result.success && result.songs) {
-                resultContainer.innerHTML = `<h3 class="recommendations-title">🔍 Recommendations</h3>`;
-                result.songs.forEach((song, index) => {
-                    const songCard = document.createElement('div');
-                    songCard.className = 'song-card-wrapper';
-                    resultContainer.appendChild(songCard);
-                    
-                    // Only auto-update the floating player for the very first (top) result
-                    const shouldAutoPlay = (index === 0);
-                    
-                    fetchYouTubeVideoAPI(song.title, song.artist).then(videoData => {
-                        renderSongResult({ 
-                            ...song, 
-                            videoUrl: videoData.success ? videoData.videoUrl : null,
-                            autoPlayTrack: shouldAutoPlay 
-                        }, songCard);
-                    }).catch(() => renderSongResult({ ...song, autoPlayTrack: shouldAutoPlay }, songCard));
-                });
-            } else {
-                resultContainer.innerHTML = `<div class="result-card"><p class="error">${sanitizeHTML(result.message || 'No results found.')}</p></div>`;
+        clearTimeoutFeedback();
+        resultContainer.innerHTML = `
+            <div class="result-card streaming-card">
+                <h3 style="margin-bottom: 15px; color: var(--accent-primary);"><i class="fas fa-magic"></i> Adagio is thinking...</h3>
+                <div id="streamingText" class="streaming-text" style="font-size: 1.1rem; line-height: 1.6; white-space: pre-wrap; color: var(--text-secondary);"></div>
+            </div>`;
+        const streamingText = document.getElementById('streamingText');
+
+        let accText = '';
+        await searchIntelligentStreamAPI(
+            apiQuery,
+            (chunk) => {
+                accText += chunk;
+                let display = accText;
+                const codeBlockIdx = display.indexOf('```');
+                if (codeBlockIdx !== -1) {
+                    display = display.substring(0, codeBlockIdx);
+                } else if (display.trim().startsWith('[')) {
+                    display = "Curating your optimal tracks...";
+                }
+                if (streamingText) streamingText.innerHTML = sanitizeHTML(display).replace(/\n/g, '<br>');
+            },
+            (message) => {
+                if (streamingText) streamingText.innerHTML += `<br><br><em style="color:var(--accent-secondary);"><i class="fas fa-spinner fa-spin"></i> ${sanitizeHTML(message)}</em>`;
+            },
+            (songs) => {
+                if (songs && songs.length > 0) {
+                    resultContainer.innerHTML = `<h3 class="recommendations-title">🔍 Recommendations</h3>`;
+                    songs.forEach((song, index) => {
+                        const songCard = document.createElement('div');
+                        songCard.className = 'song-card-wrapper';
+                        resultContainer.appendChild(songCard);
+                        
+                        const shouldAutoPlay = (index === 0);
+                        
+                        fetchYouTubeVideoAPI(song.title, song.artist).then(videoData => {
+                            renderSongResult({ 
+                                ...song, 
+                                videoUrl: videoData.success ? videoData.videoUrl : null,
+                                autoPlayTrack: shouldAutoPlay 
+                            }, songCard);
+                        }).catch(() => renderSongResult({ ...song, autoPlayTrack: shouldAutoPlay }, songCard));
+                    });
+                } else {
+                    resultContainer.innerHTML = `<div class="result-card"><p class="error">${sanitizeHTML('No results found.')}</p></div>`;
+                }
+                if (!queryOverride) {
+                    saveToHistory(originalQuery);
+                    renderHistoryUI();
+                }
+            },
+            (error) => {
+                resultContainer.innerHTML = '<div class="result-card"><p class="error">Something went wrong. Please try again.</p></div>';
             }
-            if (!queryOverride) {
-                saveToHistory(originalQuery);
-                renderHistoryUI();
-            }
-        } catch (error) {
-            clearTimeoutFeedback();
-            resultContainer.innerHTML = '<div class="result-card"><p class="error">Something went wrong. Please try again.</p></div>';
-        }
+        );
     };
 
     intelligentSearchButton?.addEventListener('click', () => triggerSearch());
@@ -411,17 +432,49 @@ document.addEventListener('DOMContentLoaded', async function () {
                     btn.textContent = 'Translated';
                 } else btn.textContent = 'Failed';
             }
-            if(action === 'mix') {
+            if (action === 'mix') {
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...'; btn.disabled = true;
-                const res = await fetchRecommendationsAPI(artist, title);
-                if(res.success && res.recommendations.length > 0) {
-                    document.getElementById(`mix-container-${btoa(encodeURIComponent(title)+'-'+encodeURIComponent(artist)).substring(0,16)}`).innerHTML = `
+                const mixId = `mix-container-${btoa(`${encodeURIComponent(title)}-${encodeURIComponent(artist)}`).substring(0, 16)}`;
+                const mixContainer = document.getElementById(mixId);
+                if (mixContainer) {
+                    mixContainer.innerHTML = `
                         <h4 style="margin: 20px 0 15px; color: var(--accent-primary);">🎧 Your AI Mix</h4>
-                        <div class="recommendations-grid">
-                        ${res.recommendations.map(r=>`<div class="rec-card btn-searchable" data-query="${sanitizeHTML(r.title)} by ${sanitizeHTML(r.artist)}"><h4>${sanitizeHTML(r.title)}</h4><p>${sanitizeHTML(r.artist)}</p></div>`).join('')}
-                        </div>`;
-                    btn.innerHTML = '<i class="fas fa-check"></i> Mix Created';
-                } else btn.innerHTML = 'Error';
+                        <div id="mixStreamText-${mixId}" class="streaming-text" style="font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; color: var(--text-secondary);"></div>
+                    `;
+                    const streamText = document.getElementById(`mixStreamText-${mixId}`);
+
+                    let accText = '';
+                    await fetchRecommendationsStreamAPI(
+                        artist, 
+                        title,
+                        (chunk) => { 
+                            accText += chunk;
+                            let display = accText;
+                            const codeBlockIdx = display.indexOf('```');
+                            if (codeBlockIdx !== -1) display = display.substring(0, codeBlockIdx);
+                            else if (display.trim().startsWith('[')) display = "Mixing your customized tracklist...";
+                            if(streamText) streamText.innerHTML = sanitizeHTML(display).replace(/\n/g, '<br>'); 
+                        },
+                        (msg) => { if(streamText) streamText.innerHTML += `<br><em style="color:var(--accent-secondary);"><i class="fas fa-spinner fa-spin"></i> ${sanitizeHTML(msg)}</em>`; },
+                        (recommendations) => {
+                            if (recommendations && recommendations.length > 0) {
+                                mixContainer.innerHTML = `
+                                    <h4 style="margin: 20px 0 15px; color: var(--accent-primary);">🎧 Your AI Mix</h4>
+                                    <div class="recommendations-grid">
+                                    ${recommendations.map(r=>`<div class="rec-card btn-searchable" data-query="${sanitizeHTML(r.title)} by ${sanitizeHTML(r.artist)}"><h4>${sanitizeHTML(r.title)}</h4><p>${sanitizeHTML(r.artist)}</p></div>`).join('')}
+                                    </div>`;
+                                btn.innerHTML = '<i class="fas fa-check"></i> Mix Created';
+                            } else {
+                                mixContainer.innerHTML = '<p class="error">No mix found.</p>';
+                                btn.innerHTML = 'Error';
+                            }
+                        },
+                        (err) => {
+                            mixContainer.innerHTML = '<p class="error">Error generating mix.</p>';
+                            btn.innerHTML = 'Error';
+                        }
+                    );
+                }
             }
             if(action === 'share') {
                 navigator.clipboard.writeText(btn.dataset.link).then(() => {

@@ -68,6 +68,54 @@ async function callAI(systemPrompt, userPrompt, temperature = 0.7, maxTokens = 4
     }
 }
 
+async function* callAIStream(systemPrompt, userPrompt, temperature = 0.7, maxTokens = 400, label = 'AI Stream') {
+    console.log(`🌊 AI Stream [${label}]: ${userPrompt.substring(0, 60)}...`);
+    try {
+        const response = await fetch(OLLAMA_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: currentModel,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user',   content: userPrompt   }
+                ],
+                stream: true,
+                think: false,
+                keep_alive: -1,
+                options: {
+                    temperature,
+                    num_ctx: 2048,
+                    num_predict: maxTokens
+                }
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Ollama HTTP ${response.status}`);
+        }
+
+        for await (const chunk of response.body) {
+            const lines = chunk.toString().split('\n').filter(Boolean);
+            for (const line of lines) {
+                try {
+                    const parsed = JSON.parse(line);
+                    if (parsed.message?.content !== undefined) {
+                        yield parsed.message.content;
+                    }
+                } catch (e) {
+                    // Ignore incomplete JSON chunks from edge cases
+                }
+            }
+        }
+        console.log(`✅ Ollama stream done [${label}]`);
+    } catch (e) {
+        console.error(`❌ AI Stream failed: ${e.message}`);
+        throw new Error(`Local AI unavailable: ${e.message}. Is Ollama running?`);
+    }
+}
+
+
 async function warmupModel() {
     await selectBestModel();
     console.log(`🔥 Warming up Ollama model (${currentModel})...`);
@@ -113,5 +161,6 @@ async function selectBestModel() {
 module.exports = {
     parseAIResponse,
     callAI,
+    callAIStream,
     warmupModel
 };

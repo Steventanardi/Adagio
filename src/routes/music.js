@@ -10,7 +10,7 @@ const ffmpegPath = require('ffmpeg-static');
 ffmpeg.setFfmpegPath(ffmpegPath);
 
 const { fetchYouTubeVideoUrl } = require('../services/youtube');
-const { callAI, parseAIResponse } = require('../services/ai');
+const { callAI, callAIStream, parseAIResponse } = require('../services/ai');
 const { verifySongWithSpotify } = require('../services/spotify');
 const { identifySong } = require('../services/recognition');
 
@@ -189,29 +189,49 @@ router.get('/api/lyrics', async (req, res) => {
 router.post('/api/deep-lyrics', async (req, res) => {
     const { text, artist, title } = req.body;
     if (!text) return res.status(400).json({ success: false });
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+    });
     try {
         const systemPrompt = 'Music critic. Explain deeper meaning in under 40 words. Be direct, no preamble.';
         const truncatedText = text.substring(0, 300); // only send a snippet
         const userPrompt = `"${title}" by "${artist}": "${truncatedText}"`;
-        const aiText = await callAI(systemPrompt, userPrompt, 0.7, 120, 'Deep Lyrics');
-        res.json({ success: true, explanation: aiText });
+        const stream = callAIStream(systemPrompt, userPrompt, 0.7, 120, 'Deep Lyrics');
+        for await (const chunk of stream) {
+            res.write(`data: ${JSON.stringify({ type: 'chunk', text: chunk })}\n\n`);
+        }
+        res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+        res.end();
     } catch (e) {
-        res.status(500).json({ success: false, error: e.message });
+        res.write(`data: ${JSON.stringify({ type: 'error', error: e.message })}\n\n`);
+        res.end();
     }
 });
 
 router.post('/intelligent-search', async (req, res) => {
     const { query } = req.body;
     if (!query) return res.status(400).json({ success: false });
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+    });
     try {
-        const systemPrompt = 'Reply ONLY with a JSON array of EXACTLY 5 objects. Example: [{"title":"Blinding Lights","artist":"The Weeknd"}]. CRITICAL RULES: 1. Provide ONLY real-world songs by established artists. 2. NEVER include the artist name inside the title field. 3. Think outside the box and provide a highly diverse, unique mix of exactly 5 songs that fit the user prompt. Avoid repeating generic pop hits unless specifically asked. 4. Double-check yourself: only provide songs you are 100% sure exist.';
-        // Raised temperature to 0.85 for heavily diverse recommendations
-        const aiText = await callAI(systemPrompt, query.substring(0, 200) + ' (Return exactly 5 songs)', 0.85, 200, 'Intelligent Search');
+        const systemPrompt = 'You are an expert music curator. FIRST, politely give a very short 1-2 sentence introduction about the tracks you are recommending. THEN, output a markdown JSON block containing an array of EXACTLY 5 objects. Example format:\nHere are some energetic tracks to get you moving!\n```json\n[{"title":"Blinding Lights","artist":"The Weeknd"}]\n```\nCRITICAL RULES: 1. Provide ONLY real songs by established artists. 2. NEVER include artist name in the title. 3. Be diverse. 4. Only provide songs you are 100% sure exist.';
+        let accumulatedText = '';
+        const stream = callAIStream(systemPrompt, query.substring(0, 200) + ' (Return exactly 5 songs)', 0.85, 200, 'Intelligent Search');
         
-        const rawSongs = parseAIResponse(aiText) || [];
+        for await (const chunk of stream) {
+            accumulatedText += chunk;
+            res.write(`data: ${JSON.stringify({ type: 'chunk', text: chunk })}\n\n`);
+        }
+        
+        res.write(`data: ${JSON.stringify({ type: 'status', message: 'Verifying with Spotify...' })}\n\n`);
+        const rawSongs = parseAIResponse(accumulatedText) || [];
         const verifiedSongs = [];
         
-        // Run AI output through Spotify to guarantee they refer to real songs
         for (const s of rawSongs) {
             if (s.title && s.artist) {
                 const verified = await verifySongWithSpotify(s.artist, s.title);
@@ -219,24 +239,36 @@ router.post('/intelligent-search', async (req, res) => {
             }
         }
         
-        res.json({ success: true, songs: verifiedSongs.length > 0 ? verifiedSongs : rawSongs });
+        res.write(`data: ${JSON.stringify({ type: 'done', songs: verifiedSongs.length > 0 ? verifiedSongs : rawSongs })}\n\n`);
+        res.end();
     } catch (e) {
-        res.status(500).json({ success: false, error: e.message });
+        res.write(`data: ${JSON.stringify({ type: 'error', error: e.message })}\n\n`);
+        res.end();
     }
 });
 
 router.post('/api/recommendations', async (req, res) => {
     const { artist, title } = req.body;
     if (!artist || !title) return res.status(400).json({ success: false });
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+    });
     try {
-        const systemPrompt = 'Reply ONLY with a JSON array of EXACTLY 5 objects. Example: [{"title":"Blinding Lights","artist":"The Weeknd"}]. CRITICAL RULES: 1. Provide ONLY real-world songs by established artists. 2. NEVER include the artist name inside the title field. 3. Provide a highly diverse, unique mix of exactly 5 similar songs. Avoid repeating generic pop hits. 4. Double-check yourself: only provide songs you are 100% sure exist.';
+        const systemPrompt = 'You are an expert music curator. FIRST, politely give a very short 1-2 sentence introduction recommending 5 similar tracks. THEN, output a markdown JSON block containing an array of EXACTLY 5 objects. Example format:\nIf you like that, you\'ll love these:\n```json\n[{"title":"Blinding Lights","artist":"The Weeknd"}]\n```\nCRITICAL RULES: 1. Provide ONLY real songs by established artists. 2. NEVER include artist name in the title. 3. Be diverse. 4. Only provide songs you are 100% sure exist.';
         const userPrompt = `Provide exactly 5 songs similar to "${title}" by "${artist}"`;
-        // Raised temperature to 0.85 to un-bias the local model
-        const aiText = await callAI(systemPrompt, userPrompt, 0.85, 200, 'Recommendations');
-        const rawSongs = parseAIResponse(aiText) || [];
+        let accumulatedText = '';
+        const stream = callAIStream(systemPrompt, userPrompt, 0.85, 200, 'Recommendations');
         
+        for await (const chunk of stream) {
+            accumulatedText += chunk;
+            res.write(`data: ${JSON.stringify({ type: 'chunk', text: chunk })}\n\n`);
+        }
+        
+        res.write(`data: ${JSON.stringify({ type: 'status', message: 'Verifying with Spotify...' })}\n\n`);
+        const rawSongs = parseAIResponse(accumulatedText) || [];
         const verifiedSongs = [];
-        // Run AI output through Spotify to guarantee they refer to real songs
         for (const s of rawSongs) {
             if (s.title && s.artist) {
                 const verified = await verifySongWithSpotify(s.artist, s.title);
@@ -244,9 +276,11 @@ router.post('/api/recommendations', async (req, res) => {
             }
         }
         
-        res.json({ success: true, recommendations: verifiedSongs.length > 0 ? verifiedSongs : rawSongs });
+        res.write(`data: ${JSON.stringify({ type: 'done', recommendations: verifiedSongs.length > 0 ? verifiedSongs : rawSongs })}\n\n`);
+        res.end();
     } catch (e) {
-        res.status(500).json({ success: false, error: e.message });
+        res.write(`data: ${JSON.stringify({ type: 'error', error: e.message })}\n\n`);
+        res.end();
     }
 });
 
