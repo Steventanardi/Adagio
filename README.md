@@ -42,6 +42,9 @@ AUDD_API_KEY=your_audd_api_key
 ACR_ACCESS_KEY=your_acr_key
 ACR_ACCESS_SECRET=your_acr_secret
 ACR_HOST=identify-ap-southeast-1.acrcloud.com
+
+# Authentication (Required for server startup)
+JWT_SECRET=your_super_secret_string
 ```
 
 ---
