@@ -1,95 +1,113 @@
-# 🎵 Adagio - Intelligent Music Discovery
+<div align="center">
 
-Adagio is a locally-hosted desktop application combining the power of local AI (Ollama) with global music APIs (Spotify, YouTube, Genius, ACRCloud) to create an intuitive, mood-based music discovery and recognition platform.
+<img src="docs/banner.png" alt="Adagio Banner" width="100%">
 
-![Adagio UI Overview](docs/AdagioThesis_Manual.md) <!-- Refer to docs for screenshots if available -->
+# 🎵 ADAGIO
+### *Intelligent, Research-Grade Music Discovery & Recognition*
 
-## 🚀 Features
-- **Intelligent Search**: Use natural language to search for music and receive 8 curated, massive global hits.
-- **AI Anti-Hallucination Guard**: All AI song recommendations are rigorously fact-checked against the official **Spotify Developer API** before being displayed to ensure 100% accuracy.
-- **Mood Analysis**: Generate a palette of dark UI colors and a mood string from song lyrics or titles using AI.
-- **Audio Recognition**: Upload an MP3 or use your microphone to identify playing music via AudD and ACRCloud APIs (like Shazam).
-- **Official Music Videos**: Seamlessly stream Official Music Videos exclusively via the YouTube Data API v3 (or the fallback headless scraper).
-- **Deep Lyrics**: AI-generated music critic insights summarizing the deeper meaning behind a song's lyrics.
+[![Node.js](https://img.shields.io/badge/Node.js-v20+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Electron](https://img.shields.io/badge/Electron-Desktop-47848F?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
+[![AI Powered](https://img.shields.io/badge/Ollama-Local%20AI-blueviolet?style=for-the-badge&logo=ollama&logoColor=white)](https://ollama.com/)
+[![License](https://img.shields.io/badge/License-ISC-blue?style=for-the-badge)](LICENSE)
 
 ---
 
-## 🛠️ Prerequisites
-To run Adagio, you need the following installed on your machine:
-* **Node.js** (v16+ recommended)
-* **FFmpeg** (Included via `ffmpeg-static`, but system-wide installation is recommended for advanced audio trimming)
-* **Ollama** installed locally with the `qwen2.5:0.5b` model pulled.
-    * Run: `ollama run qwen2.5:0.5b` in your terminal to initialize it.
+**Adagio** is a premium, locally-hosted desktop application that bridges the gap between **Local LLM Intelligence (Ollama)** and **Global Music Ecosystems**. Purpose-built for Master's-level research, it ensures 100% data privacy while providing state-of-the-art music recognition, mood analysis, and intelligent discovery.
+
+[🚀 Get Started](#-installation) • [✨ Features](#-key-features) • [🛠️ Architecture](#-project-architecture) • [📖 Documentation](docs/Adagio_Manual.md)
+
+</div>
 
 ---
 
-## 🔑 API Key Setup (secret.env)
-Adagio uses several third-party APIs for music metadata, video streaming, and lyrics. Create a `secret.env` file in the root directory and add your keys:
+## ✨ Key Features
+
+<table width="100%">
+  <tr>
+    <td width="50%" valign="top">
+      <h3>🧠 Intelligent Search</h3>
+      <p>Use natural language (e.g., <i>"Give me some dark, energetic techno for late-night coding"</i>). Adagio curates 8 verified global hits based on your specific mood and request.</p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>🛡️ Anti-Hallucination Guard</h3>
+      <p>Every AI recommendation is cross-referenced against the <b>Spotify Developer API</b> in real-time. Results are discarded if they don't exist in the official database—ensuring 100% accuracy.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>🎭 Mood Analysis</h3>
+      <p>Using AI, Adagio extracts the <i>emotional essence</i> of any track, generating a custom UI color palette and descriptive mood string from lyrics or titles.</p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>🎙️ Acoustic Fingerprinting</h3>
+      <p>Upload a file or use your microphone. Adagio uses <b>ACRCloud</b> and <b>AudD</b> APIs to identify any song playing in the environment—the Shazam experience, built locally.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>📺 Official MV Streaming</h3>
+      <p>Integrated with the <b>YouTube Data API v3</b>, Adagio prioritizes <i>Official Music Videos</i>, filtering out covers and lyric videos to provide the purest artist vision.</p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>📝 Deep Lyrics Insights</h3>
+      <p>Beyond words: Adagio provides AI-generated music critic insights, summarizing the deeper narrative and metaphors hidden within song lyrics.</p>
+    </td>
+  </tr>
+</table>
+
+---
+
+## 🚀 Installation
+
+### 1. Prerequisites
+*   **Node.js v16+** (Native support for ESM)
+*   **FFmpeg** (Included via `ffmpeg-static` for audio slicing)
+*   **Ollama** installed locally with the `qwen2.5:0.5b` model pulled.
+    *   Command: `ollama run qwen2.5:0.5b`
+
+### 2. Clone & Install
+```bash
+git clone https://github.com/Steventanardi/Adagio.git
+cd Adagio
+npm install
+```
+
+### 3. API Configuration
+Create a file named `.env` in the root and add your secrets (refer to `.env.example` for details).
 
 ```env
-# Spotify (CRITICAL for AI Hallucination Guard)
-SPOTIFY_CLIENT_ID=your_spotify_id
-SPOTIFY_CLIENT_SECRET=your_spotify_secret
-
-# YouTube (For streaming official MVs. Without this, it falls back to a headless scraper)
-YOUTUBE_API_KEY=your_youtube_api_key
-
-# Genius (For fetching song lyrics)
-GENIUS_API_KEY=your_genius_key
-
-# AudD / ACRCloud (For Audio Fingerprinting/Recognition)
-AUDD_API_KEY=your_audd_api_key
-ACR_ACCESS_KEY=your_acr_key
-ACR_ACCESS_SECRET=your_acr_secret
-ACR_HOST=identify-ap-southeast-1.acrcloud.com
-
-# Authentication (Required for server startup)
-JWT_SECRET=your_super_secret_string
+SPOTIFY_CLIENT_ID=your_id
+SPOTIFY_CLIENT_SECRET=your_secret
+YOUTUBE_API_KEY=your_yt_key
+# ... see .env.example
 ```
 
 ---
 
-## 💻 Installation & Running
+## 💻 Tech Stack
 
-1. **Install Dependencies:**
-   ```bash
-   npm install
-   ```
-
-2. **Start the Applicaton:**
-   ```bash
-   npm start
-   ```
-   *This will launch the local Express backend on `http://localhost:3000` and automatically open the Electron desktop app interface.*
+- **Backend**: Node.js, Express.js
+- **Frontend**: Vanilla Javascript (Modern ES6+), Premium CSS Flexbox/Grid
+- **Database**: Local JSON State (Users & Libraries)
+- **AI Engine**: Ollama (Local AI Orchestration)
+- **Service Integration**: Spotify SDK, YouTube v3 API, Genius API, ACRCloud SDK, AudD API
 
 ---
 
 ## 📂 Project Architecture
 
-Adagio has been professionally modularized into a Model-View-Controller (MVC) style architecture to ensure maintainability and separation of concerns.
+```bash
+├── 📁 src
+│   ├── 📁 routes     # Express Controllers (Auth, Music, Library)
+│   ├── 📁 services   # Core Logic (AI, Spotify, YouTube, Recognition)
+│   └── 📁 utils      # Helpers & Database Handlers
+├── 📁 public         # Electron Frontend Assets
+├── 📁 docs           # Manuals & Research Documentation
+└── 📄 server.js      # Main Application Entry Point
+```
 
-### Root Files
-* `server.js` - The main Express application entry point. It simply loads environment variables and mounts the routing modules.
-* `main.js` - The Electron wrapper script that launches the desktop UI window.
-* `package.json` - Defines npm scripts and project dependencies.
-* `secret.env` - Secure storage for API keys.
+---
 
-### `/src` Directory (Backend Logic)
-* **`/routes/`**
-  * `auth.js` - Handles user registration (`/signup`) and login (`/signin`) using hashed `bcrypt` passwords and `jsonwebtoken`.
-  * `library.js` - Handles adding, removing, and fetching saved songs for the logged-in user.
-  * `music.js` - The core application router. Mounts the endpoints for Intelligent Search, Recommendations, Mood Analysis, Audio Uploads, and Lyrics checking.
-* **`/services/`**
-  * `ai.js` - Connects to the local Ollama instance, handles model warmup, and reliably parses AI-generated JSON.
-  * `spotify.js` - Fetches Spotify Access Tokens and runs the Anti-Hallucination Guard, validating AI models against the Spotify database.
-  * `youtube.js` - Interfaces with the Google YouTube Data API v3. Contains a strict `scoreVideo` matching algorithm to actively reject lyric videos and covers in favor of Official Music Videos. Includes a `ytsr` scraper fallback.
-  * `recognition.js` - Handles uploading audio files, slicing them with `fluent-ffmpeg`, and routing them to AudD and ACRCloud for acoustic fingerprinting.
-  * `lyrics.js` - Connects to the Genius API, searches for the correct track, and actively scrapes the HTML DOM for the song's lyric text.
-* **`/utils/`**
-  * `database.js` - Contains thread-safe helper functions to read and write state to the local `data/users.json` file.
-
-### `/Public` Directory (Frontend)
-Contains the HTML, CSS, and vanilla JavaScript that powers the user interface of the application.
-
-### `/docs` Directory (Documentation)
-Contains legacy design documents and LM Studio setup guides.
+<div align="center">
+  <p>Built with ❤️ by <b>Steven Tanardi</b> for Academic Excellence.</p>
+</div>
