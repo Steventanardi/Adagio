@@ -32,6 +32,8 @@
     "node-fetch": "^2.7.0",
     "openai": "^4.26.0",
     "punycode": "^2.3.1",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.3",
     "youtube-sr": "^4.3.12"
   },
   "repository": {

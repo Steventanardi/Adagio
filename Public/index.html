@@ -22,6 +22,7 @@
         <a href="indevice.html" title="System Audio" data-i18n-title="nav.indevice"><i class="fas fa-laptop"></i></a>
         <a href="upload.html" title="Upload File" data-i18n-title="nav.upload"><i class="fas fa-upload"></i></a>
         <a href="library.html" title="Library" data-i18n-title="nav.library"><i class="fas fa-heart"></i></a>
+        <a href="#" id="karaokeModeBtn" title="Karaoke Mode"><i class="fas fa-microphone-lines" style="color: var(--accent-primary);"></i></a>
         <div class="spacer"></div>
         <a href="signup.html" title="Account" data-i18n-title="nav.account"><i class="fas fa-user-circle"></i></a>
     </div>
@@ -66,6 +67,22 @@
         </div>
     </div>
 
+    <!-- Karaoke Modal -->
+    <div id="karaokeModal" class="modal">
+        <div class="modal-content premium-card">
+            <span class="close-modal">&times;</span>
+            <h2 style="color: var(--accent-primary);"><i class="fas fa-microphone-lines"></i> Karaoke Remote</h2>
+            <p>Scan this QR code with your phone to use it as a microphone and see live lyrics!</p>
+            <div id="karaokeQrCode" style="margin: 25px auto; padding: 15px; background: white; border-radius: 15px; width: fit-content;"></div>
+            <p id="karaokeLink" style="font-size: 0.8rem; opacity: 0.7; word-break: break-all;"></p>
+            <div class="status-indicator">
+                <span id="remoteConnectionStatus">🔴 Not Connected</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script type="module" src="js/main.js"></script>
 </body>
 

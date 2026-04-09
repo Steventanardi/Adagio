@@ -1817,3 +1817,56 @@ body[data-theme="light"].mood-change {
     text-decoration: underline;
     text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
 }
+
+/* Karaoke Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 4000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+.modal-content {
+    background: var(--surface-color);
+    margin: 10% auto;
+    padding: 30px;
+    border: 1px solid var(--surface-border);
+    width: 90%;
+    max-width: 450px;
+    border-radius: 24px;
+    text-align: center;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    animation: modalSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlide {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.close-modal {
+    color: var(--text-secondary);
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.close-modal:hover {
+    color: var(--accent-primary);
+}
+
+.status-indicator {
+    margin-top: 20px;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 0.9rem;
+    font-weight: 500;
+}

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Adagio | Karaoke Remote</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        .remote-container {
+            padding: 20px;
+            text-align: center;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .lyrics-display {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin: 20px 0;
+            font-size: 1.5rem;
+            line-height: 2rem;
+            color: var(--text-primary);
+            mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+        }
+        .current-line {
+            color: var(--accent-primary);
+            font-weight: bold;
+            transform: scale(1.1);
+            transition: all 0.3s ease;
+        }
+        .mic-btn-container {
+            padding: 20px;
+        }
+        .mic-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            box-shadow: 0 0 20px var(--accent-primary-alpha);
+            transition: all 0.3s ease;
+        }
+        .mic-btn.active {
+            animation: pulse 1.5s infinite;
+            background: #ff4b2b;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 75, 43, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 20px rgba(255, 75, 43, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 75, 43, 0); }
+        }
+    </style>
+</head>
+<body class="premium-bg">
+    <div class="remote-container">
+        <header>
+            <div class="logo">A.</div>
+            <h2 id="songTitle">Waiting for connection...</h2>
+            <p id="songArtist"></p>
+        </header>
+
+        <div id="lyricsBox" class="lyrics-display">
+            <p>Connect your phone to Adagio to see live lyrics and use your mic.</p>
+        </div>
+
+        <div class="mic-btn-container">
+            <button id="micToggle" class="mic-btn">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <p id="statusMsg">Mic is OFF</p>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room');
+
+        if (roomId) {
+            socket.emit('join-room', roomId);
+        }
+
+        const lyricsBox = document.getElementById('lyricsBox');
+        const songTitle = document.getElementById('songTitle');
+        const songArtist = document.getElementById('songArtist');
+        const micToggle = document.getElementById('micToggle');
+        const statusMsg = document.getElementById('statusMsg');
+
+        let mediaRecorder;
+        let isRecording = false;
+
+        socket.on('lyrics-update', (data) => {
+            if (data.type === 'metadata') {
+                songTitle.innerText = data.title;
+                songArtist.innerText = data.artist;
+            } else if (data.type === 'lyrics') {
+                renderLyrics(data.lines, data.currentIndex);
+            }
+        });
+
+        function renderLyrics(lines, currentIndex) {
+            lyricsBox.innerHTML = '';
+            lines.forEach((line, index) => {
+                const p = document.createElement('p');
+                p.innerText = line;
+                if (index === currentIndex) {
+                    p.className = 'current-line';
+                    setTimeout(() => p.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+                }
+                lyricsBox.appendChild(p);
+            });
+        }
+
+        micToggle.onclick = async () => {
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            socket.emit('audio-stream', { roomId, audioData: event.data });
+                        }
+                    };
+
+                    mediaRecorder.start(100); // 100ms chunks
+                    isRecording = true;
+                    micToggle.classList.add('active');
+                    statusMsg.innerText = "🎤 ON AIR";
+                } catch (err) {
+                    alert('Could not access microphone: ' + err.message);
+                }
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                micToggle.classList.remove('active');
+                statusMsg.innerText = "Mic is OFF";
+            }
+        };
+    </script>
+</body>
+</html>

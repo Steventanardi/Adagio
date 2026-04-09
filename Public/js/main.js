@@ -7,6 +7,7 @@ import { initLibrary } from './modules/library.js';
 import { initSearch } from './modules/search.js';
 import { initAudioCapture } from './modules/audioCapture.js';
 import { initUpload } from './modules/upload.js';
+import { initKaraoke } from './modules/karaoke.js';
 
 document.addEventListener('DOMContentLoaded', async function () {
     console.log("Adagio Modules Loaded. Starting SPA router...");
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     initFloatingPlayer();
 
     initRouter();
+    initKaraoke();
 
     document.addEventListener('keydown', async (e) => {
         const { navigate } = await import('./router.js');
