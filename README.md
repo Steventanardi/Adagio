@@ -60,10 +60,11 @@
 ## 🚀 Installation
 
 ### 1. Prerequisites
-*   **Node.js v16+** (Native support for ESM)
+*   **Node.js v20+** (Required — see `engines` field in `package.json`)
 *   **FFmpeg** (Included via `ffmpeg-static` for audio slicing)
-*   **Ollama** installed locally with the `qwen2.5:0.5b` model pulled.
-    *   Command: `ollama run qwen2.5:0.5b`
+*   **Ollama** installed locally. Adagio auto-selects the best available model from:
+    *   `gpt-oss:20b` → `qwen3.5:9b` → `qwen2.5:0.5b` (fallback)
+    *   Pull your preferred model: `ollama pull qwen2.5:0.5b`
 
 ### 2. Clone & Install
 ```bash
