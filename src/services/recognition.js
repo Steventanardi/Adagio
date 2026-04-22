@@ -31,29 +31,33 @@ async function identifySong(filePath) {
 
     const results = { audd: null, acr: null };
 
-    // 1. AudD (Primary)
-    try {
-        const formData = new FormData();
-        formData.append('api_token', AUDD_API_KEY || '[AUDD_LEAKED]');
-        formData.append('file', fs.createReadStream(filePath));
+    // 1. AudD (Primary) — skip entirely if API key is not configured
+    if (AUDD_API_KEY) {
+        try {
+            const formData = new FormData();
+            formData.append('api_token', AUDD_API_KEY);
+            formData.append('file', fs.createReadStream(filePath));
 
-        console.log("📡 AudD: Sending request...");
-        const response = await axios.post('https://api.audd.io/', formData, {
-            headers: formData.getHeaders(),
-            timeout: 12000
-        });
+            console.log("📡 AudD: Sending request...");
+            const response = await axios.post('https://api.audd.io/', formData, {
+                headers: formData.getHeaders(),
+                timeout: 12000
+            });
 
-        console.log(`📥 AudD Status: ${response.data.status}`);
-        if (response.data.result) {
-            results.audd = response.data.result;
-            console.log(`✅ AudD Match: ${results.audd.title} by ${results.audd.artist}`);
-        } else if (response.data.error) {
-            console.warn(`❌ AudD API Error: [${response.data.error.error_code}] ${response.data.error.error_message}`);
-        } else {
-            console.log("ℹ️ AudD: No match found.");
+            console.log(`📥 AudD Status: ${response.data.status}`);
+            if (response.data.result) {
+                results.audd = response.data.result;
+                console.log(`✅ AudD Match: ${results.audd.title} by ${results.audd.artist}`);
+            } else if (response.data.error) {
+                console.warn(`❌ AudD API Error: [${response.data.error.error_code}] ${response.data.error.error_message}`);
+            } else {
+                console.log("ℹ️ AudD: No match found.");
+            }
+        } catch (e) {
+            console.warn(`⚠️ AudD request failed: ${e.message}`);
         }
-    } catch (e) {
-        console.warn(`⚠️ AudD request failed: ${e.message}`);
+    } else {
+        console.warn('⚠️ AudD: AUDD_API_KEY not set, skipping.');
     }
 
     // 2. ACRCloud (Fallback)

@@ -35,7 +35,16 @@ if (!process.env.JWT_SECRET) {
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: "*" }
+    // Restrict to local origins only (Electron shell + localhost browser dev)
+    cors: {
+        origin: (origin, callback) => {
+            // Allow requests with no origin (Electron/desktop) or localhost
+            const allowed = !origin ||
+                origin.startsWith('http://localhost') ||
+                origin.startsWith('http://127.0.0.1');
+            callback(allowed ? null : new Error('CORS blocked'), allowed);
+        }
+    }
 });
 
 const PORT = process.env.PORT || 3000;
@@ -54,9 +63,7 @@ app.use('/', authRoutes);
 app.use('/api/library', libraryRoutes);
 app.use('/', musicRoutes);
 
-app.get('/api/host-ip', (req, res) => {
-    res.json({ ip: getLocalIp(), port: PORT });
-});
+// NOTE: /api/host-ip removed — it leaked the server's LAN IP to any public caller.
 
 
 // Socket.io Karaoke Logic

@@ -151,13 +151,21 @@ router.post('/upload', uploadMiddleware, handleAudioRecognition);
 router.post('/upload-mic-audio', uploadMiddleware, handleAudioRecognition);
 router.post('/recognize-indevice-audio', uploadMiddleware, handleAudioRecognition);
 
-// Debug endpoint to hear what the server heard
+// Debug endpoint — protected by JWT to prevent public access to user audio
 router.get('/api/debug/last-audio', (req, res) => {
+    const jwt = require('jsonwebtoken');
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).send('Unauthorized');
+    try {
+        jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
+    } catch {
+        return res.status(401).send('Invalid token');
+    }
     const debugPath = path.join(__dirname, '../../uploads', 'last-debug.mp3');
     if (fs.existsSync(debugPath)) {
         res.download(debugPath);
     } else {
-        res.status(404).send("No debug audio available.");
+        res.status(404).send('No debug audio available.');
     }
 });
 
